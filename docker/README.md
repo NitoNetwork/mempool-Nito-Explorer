@@ -77,6 +77,7 @@ Compose volumes:
 
 - `mariadb_data`;
 - `electrumx_data`;
-- `backend_cache`.
+- `backend_cache`, the backend's writable location for its generated configuration,
+  runtime caches, and PID lock while the container root filesystem stays read-only.
 
 Back these volumes up before deleting a deployment.

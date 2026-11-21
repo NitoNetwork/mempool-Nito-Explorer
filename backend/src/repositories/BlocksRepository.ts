@@ -130,14 +130,14 @@ class BlocksRepository {
       this.amountReconstruction = (/** @asyncUnsafe */ async () => {
         let repaired = 0;
         while (true) {
-          const [rows]: any = await DB.query('SELECT hash FROM blocks WHERE amounts_version = 0 ORDER BY height LIMIT 100');
+          const [rows]: any = await DB.query('SELECT hash, stale FROM blocks WHERE amounts_version = 0 ORDER BY height LIMIT 100');
           if (!rows.length) {
             this.amountReconstructionComplete = true;
             logger.info(`Exact block amount reconstruction completed (${repaired} blocks)`);
             return;
           }
           for (const row of rows) {
-            await this.$repairAmounts(row.hash);
+            await this.$repairAmounts(row.hash, !!row.stale);
             repaired++;
           }
           logger.debug(`Reconstructed exact amounts for ${repaired} historical blocks`);
@@ -147,10 +147,10 @@ class BlocksRepository {
     await this.amountReconstruction;
   }
 
-  private $repairAmounts(hash: string): ReturnType<typeof reconstructBlockAmounts> {
+  private $repairAmounts(hash: string, stale = false): ReturnType<typeof reconstructBlockAmounts> {
     let repair = this.amountRepairs.get(hash);
     if (!repair) {
-      repair = reconstructBlockAmounts(bitcoinClient, hash).then(/** @asyncUnsafe */ async amounts => {
+      repair = reconstructBlockAmounts(bitcoinClient, hash, { stale }).then(/** @asyncUnsafe */ async amounts => {
         await DB.query(`UPDATE blocks SET reward = ?, fees = ?, avg_fee = ?, median_fee_amt = ?,
           total_output_amt = ?, total_input_amt = ?, fee_percentiles = NULL, amounts_version = 1 WHERE hash = ?`,
         [amounts.reward, amounts.totalFees, amounts.avgFee, amounts.medianFeeAmt,

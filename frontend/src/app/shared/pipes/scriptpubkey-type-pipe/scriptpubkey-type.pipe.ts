@@ -15,7 +15,7 @@ export class ScriptpubkeyTypePipe implements PipeTransform {
       case 'op_return':
         return 'OP_RETURN';
       case 'private_orchard':
-        return 'Bech32x...';
+        return 'Private';
       default:
         return value.toUpperCase();
     }

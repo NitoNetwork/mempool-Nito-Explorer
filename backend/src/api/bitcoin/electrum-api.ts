@@ -8,9 +8,9 @@ import logger from '../../logger';
 import crypto from 'crypto-js';
 import loadingIndicators from '../loading-indicators';
 import { amount, addAmounts, parseCoreJson, transactionNitoshi } from '../nito-values';
+import { PRIVATE_ADDRESS_ERROR } from '../nito-errors';
 import { IndexUnavailableError } from './index-unavailable-error';
 
-const PRIVATE_ORCHARD_ADDRESS_ERROR = 'Private Orchard address balances are not public';
 type TransparentEffects = { vin: { txid: string; vout: number; is_coinbase: boolean }[]; vout: { scriptpubkey: string; value: string }[] };
 type AddressContribution = { funded_txo_count: number; funded_txo_sum: string; spent_txo_count: number; spent_txo_sum: string };
 
@@ -224,7 +224,7 @@ class BitcoindElectrsApi extends BitcoinApi implements AbstractBitcoinApi {
       throw new Error('Invalid Bitcoin address');
     }
     if (!addressInfo.scriptPubKey) {
-      throw new Error(PRIVATE_ORCHARD_ADDRESS_ERROR);
+      throw new Error(PRIVATE_ADDRESS_ERROR);
     }
 
     try {
@@ -254,7 +254,7 @@ class BitcoindElectrsApi extends BitcoinApi implements AbstractBitcoinApi {
       throw new Error('Invalid Bitcoin address');
     }
     if (!addressInfo.scriptPubKey) {
-      throw new Error(PRIVATE_ORCHARD_ADDRESS_ERROR);
+      throw new Error(PRIVATE_ADDRESS_ERROR);
     }
 
     try {
@@ -313,7 +313,7 @@ class BitcoindElectrsApi extends BitcoinApi implements AbstractBitcoinApi {
       throw new Error('Invalid Bitcoin address');
     }
     if (!addressInfo.scriptPubKey) {
-      throw new Error(PRIVATE_ORCHARD_ADDRESS_ERROR);
+      throw new Error(PRIVATE_ADDRESS_ERROR);
     }
     const scripthash = this.encodeScriptHash(addressInfo.scriptPubKey);
     return this.$getScriptHashUtxos(scripthash);

@@ -11,7 +11,7 @@ import { AssetsService } from '@app/services/assets.service';
 import { environment } from '@environments/environment';
 import { ElectrsApiService } from '@app/services/electrs-api.service';
 
-const PRIVATE_ORCHARD_LABEL = 'Bech32x...';
+const PRIVATE_ORCHARD_LABEL = 'Private...';
 
 interface SvgLine {
   path: string;

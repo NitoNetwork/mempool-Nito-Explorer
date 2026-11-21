@@ -1,4 +1,4 @@
-import { Amount, amount, addAmounts, sumAmounts, subtractAmounts, compareAmounts, divideAmount, amountToNumber, coinToNitoshi } from './nito-values';
+import { Amount, amount, addAmounts, sumAmounts, subtractAmounts, compareAmounts, coinToNitoshi } from './nito-values';
 import config from '../config';
 import bitcoinApi, { bitcoinCoreApi } from './bitcoin/bitcoin-api-factory';
 import logger from '../logger';
@@ -38,6 +38,7 @@ import CpfpRepository from '../repositories/CpfpRepository';
 import { parseDATUMTemplateCreator } from '../utils/bitcoin-script';
 import database from '../database';
 import { getBlockFirstSeenFromLogs, getOldestLogTimestampFromLogs, scanLogsForBlocksFirstSeen } from '../utils/file-read';
+import { calculateStaleBlockStats } from './nito-stale-block-stats';
 
 class Blocks {
   private blocks: BlockExtended[] = [];
@@ -439,73 +440,7 @@ class Blocks {
     if (!block.stale) {
       return bitcoinClient.getBlockStats(block.id);
     }
-
-    // TODO: make these match the definitions used by the RPC response
-    const totalFee = sumAmounts(transactions.map(tx => tx.fee));
-    const totalVsize = transactions.reduce((acc, tx) => acc + tx.vsize, 0);
-    const totalReward = sumAmounts(transactions[0].vout.map(vout => vout.value));
-    const sortedByFee = transactions.sort((a, b) => compareAmounts(a.fee, b.fee));
-    const sortedByVsize = transactions.sort((a, b) => a.vsize - b.vsize);
-    const sortedByFeerate = transactions.sort((a, b) => (amountToNumber(a.fee) / a.weight) - (amountToNumber(b.fee) / b.weight));
-    const sortedFeerates = sortedByFeerate.map(tx => (amountToNumber(tx.fee) / (tx.weight / 4)));
-    const avgfee = divideAmount(totalFee, transactions.length);
-    const avgfeerate = amountToNumber(totalFee) / (block.weight / 4);
-    const avgtxsize = totalVsize / transactions.length;
-    const medianfee = sortedByFee[Math.floor(transactions.length / 2)].fee;
-    const mediantime = block.timestamp;
-    const mediantxsize = sortedByVsize[Math.floor(transactions.length / 2)].vsize;
-    const minfee = sortedByFee[0].fee;
-    const maxfee = sortedByFee[sortedByFee.length - 1].fee;
-    const minfeerate = sortedFeerates[0];
-    const maxfeerate = sortedFeerates[sortedFeerates.length - 1];
-    const mintxsize = sortedByVsize[0].vsize;
-    const maxtxsize = sortedByVsize[sortedByVsize.length - 1].vsize;
-    const ins = transactions.reduce((acc, tx) => acc + tx.vin.length, 0);
-    const outs = transactions.reduce((acc, tx) => acc + tx.vout.length, 0);
-    const subsidy = subtractAmounts(totalReward, totalFee);
-    const swtotal_size = 0;
-    const swtotal_weight = 0;
-    const swtxs = 0;
-    const time = block.timestamp;
-    const total_out = sumAmounts(transactions.flatMap(tx => tx.vout.map(vout => vout.value)));
-    const total_size = block.size;
-    const total_weight = block.weight;
-    const totalfee = totalFee;
-    const txs = transactions.length;
-    const utxo_increase = 0;
-    const utxo_size_inc = 0;
-
-    return {
-      avgfee,
-      avgfeerate,
-      avgtxsize,
-      blockhash: block.id,
-      feerate_percentiles: [minfeerate, sortedFeerates[Math.floor(transactions.length / 4)], sortedFeerates[Math.floor(transactions.length / 2)], sortedFeerates[Math.floor(transactions.length * 3 / 4)], maxfeerate],
-      height: block.height,
-      ins,
-      maxfee,
-      maxfeerate,
-      maxtxsize,
-      medianfee,
-      mediantime,
-      mediantxsize,
-      minfee,
-      minfeerate,
-      mintxsize,
-      outs,
-      subsidy,
-      swtotal_size,
-      swtotal_weight,
-      swtxs,
-      time,
-      total_out,
-      total_size,
-      total_weight,
-      totalfee,
-      txs,
-      utxo_increase,
-      utxo_size_inc,
-    };
+    return calculateStaleBlockStats(block, transactions);
   }
 
 
@@ -1141,7 +1076,7 @@ class Blocks {
 
   /**
    * [INDEXING] Index all blocks first seen time from Bitcoin Core debug logs
-   * 
+   *
    * @asyncUnsafe
    */
   public async $indexBlocksFirstSeen(): Promise<void> {

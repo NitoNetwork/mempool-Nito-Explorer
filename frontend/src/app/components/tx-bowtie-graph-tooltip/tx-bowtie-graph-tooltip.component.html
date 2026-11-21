@@ -38,7 +38,7 @@
 
   <ng-template #privateOrchard>
     <ng-container *ngIf="line.privateOrchard; else normal">
-      <p>Bech32x...</p>
+      <p>{{ (stateService.orchardActivated$ | async) ? 'Bech32x...' : 'Private...' }}</p>
     </ng-container>
   </ng-template>
 

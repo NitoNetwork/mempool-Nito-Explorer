@@ -17,6 +17,7 @@ function render(directory, overrides = {}) {
     CORE_RPC_USERNAME: 'nito-rpc',
     CORE_RPC_PASSWORD: 'rpc!&\\"line\nnext',
     DATABASE_DATABASE: 'mempool_nito',
+    DATABASE_PID_DIR: '/app/backend/cache',
     DATABASE_USERNAME: 'nito-db',
     DATABASE_PASSWORD: 'db!&\\"line\nnext',
     ...overrides,
@@ -39,6 +40,7 @@ try {
   const config = JSON.parse(await readFile(success.output, 'utf8'));
   assert.equal(config.CORE_RPC.PASSWORD, 'rpc!&\\"line\nnext');
   assert.equal(config.DATABASE.PASSWORD, 'db!&\\"line\nnext');
+  assert.equal(config.DATABASE.PID_DIR, '/app/backend/cache');
   assert.equal(config.MAXMIND.ENABLED, false);
   assert.equal(config.MEMPOOL.POOLS_JSON_URL, '');
   assert.equal(config.EXTERNAL_DATA_SERVER.MEMPOOL_API, '');
@@ -50,6 +52,10 @@ try {
   if (process.platform !== 'win32') {
     assert.equal((await stat(success.output)).mode & 0o777, 0o600);
   }
+
+  const compose = await readFile(path.join(here, '..', '..', 'docker-compose.yml'), 'utf8');
+  assert.match(compose, /^\s{6}DATABASE_PID_DIR: "\/app\/backend\/cache"$/m);
+  assert.match(compose, /^\s{6}- backend_cache:\/app\/backend\/cache$/m);
 
   const missingSecret = render(temporaryDirectory, { CORE_RPC_PASSWORD: undefined });
   assert.notEqual(missingSecret.result.status, 0);

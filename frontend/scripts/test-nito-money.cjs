@@ -159,6 +159,14 @@ assert.equal(graph.sumDisplayValues([{ displayValue: '1' }, { privateOrchard: tr
 graph.tx.fee = '-1';
 graph.initGraph();
 assert.equal(graph.outputData.some(item => item.type === 'fee'), false);
+graph.lineLimit = 10;
+graph.tx = { ...graph.tx, has_private_bundle: true, private_bundle: { value_balance: '0.00000001' } };
+graph.initGraph();
+const privateSides = [...graph.inputData, ...graph.outputData].filter(item => item.privateOrchard);
+assert.equal(privateSides.length, 2);
+assert.deepEqual(privateSides.map(item => item.address), ['Private...', 'Private...']);
+const { ScriptpubkeyTypePipe } = load('src/app/shared/pipes/scriptpubkey-type-pipe/scriptpubkey-type.pipe.ts');
+assert.equal(new ScriptpubkeyTypePipe().transform('private_orchard'), 'Private');
 const { BehaviorSubject } = require('rxjs');
 const { WebsocketService } = load('src/app/services/websocket.service.ts');
 const socket = Object.create(WebsocketService.prototype);
@@ -315,6 +323,10 @@ socket.initRbfSummary().then(async () => {
   render(feesTemplate, { stateService: socket.stateService });
   const docsTemplate = template('docs/api-docs/api-docs.component.html').split('\n').find(line => line.includes('Bech32x Orchard'));
   render(docsTemplate, { stateService: socket.stateService });
+  const tooltipTemplate = template('components/tx-bowtie-graph-tooltip/tx-bowtie-graph-tooltip.component.html')
+    .split('\n').find(line => line.includes("stateService.orchardActivated$"));
+  const tooltipFixture = render(tooltipTemplate, { stateService: socket.stateService });
+  const privacyFixture = render(template('components/privacy-policy/privacy-policy.component.html'), {});
   const detailsTemplate = template('components/transaction/transaction-details/transaction-details.component.html').split('  <div class="row">')[0] + '</div>';
   render(detailsTemplate, { stateService: socket.stateService, tx: { ...accepted, private_metadata_status: 'incomplete' } });
   const { SearchFormComponent } = load('src/app/components/search-form/search-form.component.ts');
@@ -332,6 +344,12 @@ socket.initRbfSummary().then(async () => {
       if (fixture === searchFixture) {
         assert.equal(/Bech32x/.test(fixture.nativeElement.textContent), activated);
         assert.ok(fixture.nativeElement.textContent.includes('no public balance or transaction history'));
+      } else if (fixture === tooltipFixture) {
+        assert.equal(/Bech32x/.test(fixture.nativeElement.textContent), activated);
+        assert.equal(/Private/.test(fixture.nativeElement.textContent), !activated);
+      } else if (fixture === privacyFixture) {
+        assert.doesNotMatch(fixture.nativeElement.textContent, /Orchard|Bech32x|nullifier/i);
+        assert.match(fixture.nativeElement.textContent, /Private receivers and decrypted private notes/);
       } else {
         assert.equal(/Orchard/.test(fixture.nativeElement.textContent), activated, fixture.componentRef.componentType.name);
       }

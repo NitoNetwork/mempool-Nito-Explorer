@@ -27,13 +27,13 @@ import chainTips from '../chain-tips';
 import nitoPools from '../nito-pools-instance';
 import { safeNitoshi } from '../nito-values';
 import nitoActivation from '../nito-activation-instance';
+import { PRIVATE_ADDRESS_ERROR } from '../nito-errors';
 
 
 const TXID_REGEX = /^[a-f0-9]{64}$/i;
 const BLOCK_HASH_REGEX = /^[a-f0-9]{64}$/i;
 const ADDRESS_REGEX = /^[a-z0-9]{2,120}$/i;
 const SCRIPT_HASH_REGEX = /^([a-f0-9]{2})+$/i;
-const PRIVATE_ORCHARD_ADDRESS_ERROR = 'Private Orchard address balances are not public';
 
 class BitcoinRoutes {
   public initRoutes(app: Application) {
@@ -696,7 +696,7 @@ class BitcoinRoutes {
       res.json(addressData);
     } catch (e) {
       if (handleIndexUnavailable(req, res, e)) { return; }
-      if (e instanceof Error && (e.message === 'Invalid Bitcoin address' || e.message === PRIVATE_ORCHARD_ADDRESS_ERROR)) {
+      if (e instanceof Error && (e.message === 'Invalid Bitcoin address' || e.message === PRIVATE_ADDRESS_ERROR)) {
         res.status(400).send(e.message);
         return;
       }
@@ -727,7 +727,7 @@ class BitcoinRoutes {
       res.json(transactions);
     } catch (e) {
       if (handleIndexUnavailable(req, res, e)) { return; }
-      if (e instanceof Error && (e.message === 'Invalid Bitcoin address' || e.message === PRIVATE_ORCHARD_ADDRESS_ERROR)) {
+      if (e instanceof Error && (e.message === 'Invalid Bitcoin address' || e.message === PRIVATE_ADDRESS_ERROR)) {
         res.status(400).send(e.message);
         return;
       }
@@ -754,7 +754,7 @@ class BitcoinRoutes {
       res.json(addressData);
     } catch (e) {
       if (handleIndexUnavailable(req, res, e)) { return; }
-      if (e instanceof Error && (e.message === 'Invalid Bitcoin address' || e.message === PRIVATE_ORCHARD_ADDRESS_ERROR)) {
+      if (e instanceof Error && (e.message === 'Invalid Bitcoin address' || e.message === PRIVATE_ADDRESS_ERROR)) {
         res.status(400).send(e.message);
         return;
       }
