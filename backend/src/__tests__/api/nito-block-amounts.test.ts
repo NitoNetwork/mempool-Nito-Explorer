@@ -55,6 +55,7 @@ test('reconstructs a stale block from external and in-block prevouts without get
   expect(result.totalFees).toBe('200000000');
   expect(result.avgFee).toBe('100000000');
   expect(result.medianFeeAmt).toBe('100000000');
+  expect(result.transactionFees).toEqual(['100000000', '100000000']);
   expect(result.totalInputAmt).toBe((nitoshi(externalValue) + nitoshi(firstOutput)).toString());
   expect(result.totalOutputAmt).toBe((nitoshi(firstOutput) + nitoshi(secondOutput)).toString());
 });

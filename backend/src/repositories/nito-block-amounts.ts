@@ -12,6 +12,19 @@ interface ReconstructionOptions {
   stale?: boolean;
 }
 
+export interface ReconstructedBlockAmounts {
+  reward: string;
+  totalFees: string;
+  avgFee: string;
+  medianFeeAmt: string;
+  totalOutputAmt: string;
+  totalInputAmt: string;
+  feePercentiles: null;
+  amountsVersion: 1;
+  /** Ordered like block.tx.slice(1); available when rebuilt from public prevouts. */
+  transactionFees?: string[];
+}
+
 function truncatedMedian(values: bigint[]): string {
   if (!values.length) {
     return '0';
@@ -39,7 +52,7 @@ function checkedPrivateBalance(tx: any): bigint {
 }
 
 /** Rebuild stale-block fees without relying on undo data retained by Core. @asyncUnsafe */
-async function reconstructStaleBlockAmounts(rpc: any, block: any) {
+export async function reconstructStaleBlockAmounts(rpc: any, block: any): Promise<ReconstructedBlockAmounts> {
   if (!Array.isArray(block?.tx) || !block.tx.length) {
     throw new Error('Cannot reconstruct block amounts without verbose transactions');
   }
@@ -109,6 +122,7 @@ async function reconstructStaleBlockAmounts(rpc: any, block: any) {
     totalInputAmt: totalInputs.toString(),
     feePercentiles: null,
     amountsVersion: 1,
+    transactionFees: fees.map(fee => fee.toString()),
   };
 }
 
@@ -116,7 +130,7 @@ async function reconstructStaleBlockAmounts(rpc: any, block: any) {
  * Reconstruct legacy monetary columns from public Core data, never rounded SQL values.
  * @asyncUnsafe Core RPC failures must abort the historical reconstruction.
  */
-export async function reconstructBlockAmounts(rpc: any, hash: string, options: ReconstructionOptions = {}) {
+export async function reconstructBlockAmounts(rpc: any, hash: string, options: ReconstructionOptions = {}): Promise<ReconstructedBlockAmounts> {
   const block = await rpc.getBlock(hash, 2);
   if (options.stale || block?.confirmations < 0) {
     return reconstructStaleBlockAmounts(rpc, block);

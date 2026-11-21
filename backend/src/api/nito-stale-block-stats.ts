@@ -1,7 +1,7 @@
 import { IBitcoinApi } from './bitcoin/bitcoin-api.interface';
 import { IEsploraApi } from './bitcoin/esplora-api.interface';
 import { TransactionExtended } from '../mempool.interfaces';
-import { MAX_MONEY, amount, sumAmounts } from './nito-values';
+import { Amount, MAX_MONEY, amount, sumAmounts } from './nito-values';
 
 function truncatedMedian(values: bigint[]): string {
   if (!values.length) {
@@ -62,14 +62,18 @@ function calculateFeeRatePercentiles(entries: { rate: number; weight: number }[]
 export function calculateStaleBlockStats(
   block: IEsploraApi.Block,
   transactions: TransactionExtended[],
+  exactTransactionFees: Amount[],
 ): IBitcoinApi.BlockStats {
   if (!transactions.length) {
     throw new Error('Cannot calculate stale block statistics without transactions');
   }
 
   const ordinary = transactions.slice(1);
-  const fees = ordinary.map(tx => {
-    const fee = BigInt(amount(tx.fee));
+  if (exactTransactionFees.length !== ordinary.length) {
+    throw new Error('Exact stale transaction fee count does not match block transactions');
+  }
+  const fees = exactTransactionFees.map(value => {
+    const fee = BigInt(amount(value));
     if (fee < 0n || fee > MAX_MONEY) {
       throw new Error('Stale block transaction fee outside Nito MoneyRange');
     }

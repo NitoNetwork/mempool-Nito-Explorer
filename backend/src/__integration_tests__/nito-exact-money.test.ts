@@ -65,7 +65,8 @@ describe('Exact Nito monetary persistence', () => {
     await insertTestBlock({ height: 2000, hash, poolId, tx_count: 2 });
     const source = jest.spyOn(bitcoinClient, 'getBlock').mockResolvedValue({ height: 2000, tx: [
       { vout: [{ value: '90071992.54740994' }] },
-      { vout: [{ value: '1.00000000' }], has_private_bundle: true, private_bundle: { value_balance: '-0.00000001' } },
+      { vout: [{ value: '1.00000000' }], has_private_bundle: true,
+        private_bundle: { actions: 1, flags: 3, has_auth: true, value_balance: '-0.00000001' } },
     ] } as any);
     const stats = jest.spyOn(bitcoinClient, 'getBlockStats').mockResolvedValue({
       totalfee: '9007199254740993', avgfee: '9007199254740993', medianfee: '9007199254740993',

@@ -39,6 +39,7 @@ import { parseDATUMTemplateCreator } from '../utils/bitcoin-script';
 import database from '../database';
 import { getBlockFirstSeenFromLogs, getOldestLogTimestampFromLogs, scanLogsForBlocksFirstSeen } from '../utils/file-read';
 import { calculateStaleBlockStats } from './nito-stale-block-stats';
+import { reconstructBlockAmounts } from '../repositories/nito-block-amounts';
 
 class Blocks {
   private blocks: BlockExtended[] = [];
@@ -436,11 +437,16 @@ class Blocks {
     return <BlockExtended>blk;
   }
 
+  /** @asyncUnsafe */
   private async $getBlockStats(block: IEsploraApi.Block, transactions: TransactionExtended[]): Promise<IBitcoinApi.BlockStats> {
     if (!block.stale) {
       return bitcoinClient.getBlockStats(block.id);
     }
-    return calculateStaleBlockStats(block, transactions);
+    const reconstructed = await reconstructBlockAmounts(bitcoinClient, block.id, { stale: true });
+    if (!reconstructed.transactionFees) {
+      throw new Error('Exact stale transaction fees are unavailable');
+    }
+    return calculateStaleBlockStats(block, transactions, reconstructed.transactionFees);
   }
 
 
