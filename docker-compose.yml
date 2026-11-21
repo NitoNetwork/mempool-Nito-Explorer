@@ -64,6 +64,8 @@ services:
     build:
       context: .
       dockerfile: docker/backend/Dockerfile
+      args:
+        MEMPOOL_COMMIT_HASH: "${MEMPOOL_COMMIT_HASH:-}"
     restart: unless-stopped
     environment:
       MEMPOOL_BACKEND: "electrum"
@@ -133,6 +135,7 @@ services:
       dockerfile: docker/frontend/Dockerfile
       args:
         NITO_NETWORK: "${NITO_NETWORK:-mainnet}"
+        DOCKER_COMMIT_HASH: "${MEMPOOL_COMMIT_HASH:-}"
     restart: unless-stopped
     environment:
       DOMAIN: "${DOMAIN}"

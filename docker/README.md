@@ -61,6 +61,11 @@ Check the fully rendered configuration before starting:
 docker compose config
 ```
 
+For a traceable release build, set `MEMPOOL_COMMIT_HASH` to the exact public
+40-character commit SHA. Compose injects it into both the backend version
+metadata and the frontend runtime configuration without copying `.git` into an
+image.
+
 The Nito Core RPC endpoint must be reachable from the Docker bridge while remaining firewalled from public networks. `host.docker.internal` cannot reach a daemon that is bound exclusively to host loopback.
 
 ## Nginx Routing

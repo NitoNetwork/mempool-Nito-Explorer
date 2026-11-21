@@ -56,6 +56,13 @@ try {
   const compose = await readFile(path.join(here, '..', '..', 'docker-compose.yml'), 'utf8');
   assert.match(compose, /^\s{6}DATABASE_PID_DIR: "\/app\/backend\/cache"$/m);
   assert.match(compose, /^\s{6}- backend_cache:\/app\/backend\/cache$/m);
+  assert.match(compose, /^\s{8}MEMPOOL_COMMIT_HASH: "\$\{MEMPOOL_COMMIT_HASH:-\}"$/m);
+  assert.match(compose, /^\s{8}DOCKER_COMMIT_HASH: "\$\{MEMPOOL_COMMIT_HASH:-\}"$/m);
+
+  const backendDockerfile = await readFile(path.join(here, 'Dockerfile'), 'utf8');
+  const frontendDockerfile = await readFile(path.join(here, '..', 'frontend', 'Dockerfile'), 'utf8');
+  assert.match(backendDockerfile, /^ARG MEMPOOL_COMMIT_HASH$/m);
+  assert.match(frontendDockerfile, /^ARG DOCKER_COMMIT_HASH$/m);
 
   const missingSecret = render(temporaryDirectory, { CORE_RPC_PASSWORD: undefined });
   assert.notEqual(missingSecret.result.status, 0);

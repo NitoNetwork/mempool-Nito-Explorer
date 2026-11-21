@@ -20,6 +20,7 @@ WORKDIR /app/backend
 RUN npm ci --omit=dev --no-install-links
 
 COPY backend/ /app/backend/
+ARG MEMPOOL_COMMIT_HASH
 RUN npm run build
 
 # --- Production image ---
