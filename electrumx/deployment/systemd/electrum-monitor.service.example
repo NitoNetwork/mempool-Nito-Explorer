@@ -1,0 +1,13 @@
+[Unit]
+Description=NITO ElectrumX public monitor
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+WorkingDirectory=/opt/nito-electrum-monitor
+ExecStart=/usr/bin/python3 /opt/nito-electrum-monitor/monitor.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,392 @@
+<ng-container *ngIf="{ val: network$ | async } as network">
+  <div class="container-xl text-left">
+
+    
+
+    <div id="restAPI" *ngIf="whichTab === 'rest'">
+
+      <div id="doc-nav-desktop" class="hide-on-mobile" [ngClass]="desktopDocsNavPosition">
+        <app-api-docs-nav (navLinkClickEvent)="anchorLinkClick( $event )" [network]="{ val: network$ | async }" [whichTab]="whichTab"></app-api-docs-nav>
+      </div>
+
+      <div class="doc-content">
+
+        <div id="enterprise-cta-mobile" *ngIf="officialMempoolInstance && showMobileEnterpriseUpsell">
+          <p>Get higher API limits with <span class="no-line-break">Nito Mempool's Explorer®</span></p>
+          <div class="button-group">
+            <a class="btn btn-small btn-secondary" (click)="showMobileEnterpriseUpsell = false">No Thanks</a>
+            <a class="btn btn-small btn-purple" [href]="[ isMempoolSpaceBuild ? '/enterprise' : '#']" [target]="isMempoolSpaceBuild ? '' : 'blank'">More Info <fa-icon [icon]="['fas', 'angle-right']"></fa-icon></a>
+          </div>
+        </div>
+
+        <p class="doc-welcome-note">Below is a reference for the {{ network.val === '' ? 'Nitocoin' : network.val.charAt(0).toUpperCase() + network.val.slice(1) }} <ng-container i18n="api-docs.title">REST API service</ng-container>.</p>
+        <p class="doc-welcome-note api-note" *ngIf="officialMempoolInstance">Note that we enforce rate limits. If you exceed these limits, you will get an HTTP 429 error. If you repeatedly exceed the limits, you may be banned from accessing the service altogether. Consider an contacting support if you need higher API limits.</p>
+
+        <div class="doc-item-container" *ngFor="let item of restDocs">
+          <div *ngIf="!item.hasOwnProperty('options') || ( item.hasOwnProperty('options') && item.options.hasOwnProperty('officialOnly') && item.options.officialOnly && officialMempoolInstance ) || ( item.hasOwnProperty('options') && item.options.hasOwnProperty('electrsOnly') && item.options.electrsOnly && runningElectrs )">
+            <h3 *ngIf="( item.type === 'category' ) && ( item.showConditions.indexOf(network.val) > -1 )">{{ item.title }}</h3>
+            <div *ngIf="( item.type !== 'category' ) && ( item.showConditions.indexOf(network.val) > -1 )" class="endpoint-container" id="{{ item.fragment }}">
+              <a id="{{ item.fragment + '-tab-header' }}" class="section-header" (click)="anchorLinkClick({event: $event, fragment: item.fragment})">{{ item.title }} <span>{{ item.category }}</span></a>
+              <div class="endpoint-content">
+                <div class="endpoint">
+                  <div class="subtitle" i18n="Api docs endpoint">Endpoint</div>
+                  <ng-container *ngIf="item.httpRequestMethod === 'GET'">
+                    <a [href]="wrapUrl(network.val, item.codeExample.default)" target="_blank" rel="nofollow" *ngIf="item.fragment !== 'get-cpfp'">{{ item.httpRequestMethod }} {{ baseNetworkUrl }}/api{{ item.urlString }}</a>
+                    <p *ngIf="item.fragment === 'get-cpfp'">{{ item.httpRequestMethod }} {{ baseNetworkUrl }}/api{{ item.urlString }}</p>
+                  </ng-container>
+                  <div *ngIf="item.httpRequestMethod === 'POST'">{{ item.httpRequestMethod }} {{ item.urlString }}</div>
+                </div>
+                <div class="description">
+                  <div class="subtitle" i18n>Description</div>
+                  <div [innerHTML]="item.description.default" i18n></div>
+                </div>
+                <app-code-template [hostname]="hostname" [baseNetworkUrl]="baseNetworkUrl" [method]="item.httpRequestMethod" [code]="item.codeExample.default" [network]="network.val" [showCodeExample]="item.showJsExamples"></app-code-template>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div id="websocketAPI" *ngIf="whichTab === 'websocket'">
+
+      <div id="doc-nav-desktop" class="hide-on-mobile" [ngClass]="desktopDocsNavPosition">
+        <app-api-docs-nav (navLinkClickEvent)="anchorLinkClick( $event )" [network]="{ val: network$ | async }" [whichTab]="whichTab"></app-api-docs-nav>
+      </div>
+
+      <div class="doc-content">
+
+        <div id="enterprise-cta-mobile" *ngIf="officialMempoolInstance && showMobileEnterpriseUpsell">
+          <p>Get higher API limits with <span class="no-line-break">Nito Mempool's Explorer®</span></p>
+          <div class="button-group">
+            <a class="btn btn-small btn-secondary" (click)="showMobileEnterpriseUpsell = false">No Thanks</a>
+            <a class="btn btn-small btn-purple" [href]="[ isMempoolSpaceBuild ? '/enterprise' : '#']" [target]="isMempoolSpaceBuild ? '' : 'blank'">More Info <fa-icon [icon]="['fas', 'angle-right']"></fa-icon></a>
+          </div>
+        </div>
+
+        <p class="doc-welcome-note">Below is a reference for the {{ network.val === '' ? 'Nitocoin' : network.val.charAt(0).toUpperCase() + network.val.slice(1) }} Websocket service running at {{ websocketUrl(network.val) }}.</p>
+        <p class="doc-welcome-note api-note" *ngIf="officialMempoolInstance">Note that usage limits apply to our WebSocket API. Consider an contacting support if you need higher API limits, such as higher tracking limits.</p>
+
+        <div class="doc-item-container" *ngFor="let item of wsDocs">
+          <div *ngIf="!item.hasOwnProperty('options') || ( item.hasOwnProperty('options') && item.options.hasOwnProperty('officialOnly') && item.options.officialOnly && officialMempoolInstance )">
+            <h3 *ngIf="( item.type === 'category' ) && ( item.showConditions.indexOf(network.val) > -1 )">{{ item.title }}</h3>
+            <div *ngIf="( item.type !== 'category' ) && ( item.showConditions.indexOf(network.val) > -1 )" class="endpoint-container" id="{{ item.fragment }}">
+              <a id="{{ item.fragment + '-tab-header' }}" class="section-header" (click)="anchorLinkClick({event: $event, fragment: item.fragment})">{{ item.title }} <span>{{ item.category }}</span></a>
+              <div class="endpoint-content">
+                <div class="description">
+                  <div class="subtitle" i18n>Description</div>
+                  <div [innerHTML]="item.description.default" i18n></div>
+                </div>
+                <div class="description">
+                  <div class="subtitle">Payload</div>
+                  <pre><code [innerText]="item.payload"></code></pre>
+                </div>
+                <app-code-template [hostname]="hostname" [baseNetworkUrl]="baseNetworkUrl" [method]="item.httpRequestMethod" [code]="item.codeExample.default" [network]="network.val" [showCodeExample]="item.showJsExamples"></app-code-template>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="electrs" *ngIf="whichTab === 'electrs'">
+
+      <div id="doc-nav-desktop" class="hide-on-mobile" [ngClass]="desktopDocsNavPosition">
+        <app-api-docs-nav (navLinkClickEvent)="anchorLinkClick( $event )" [network]="{ val: network$ | async }" [whichTab]="whichTab"></app-api-docs-nav>
+      </div>
+
+      <div class="doc-content">
+
+        <div class="doc-item-container connection-info">
+          <p class="doc-welcome-note">Below is a reference for the {{ network.val === '' ? 'Nitocoin' : network.val.charAt(0).toUpperCase() + network.val.slice(1) }} Electrum JSON-RPC v2.0 API.</p>
+          
+          <div class="connection-details">
+            <h3>Connection Information</h3>
+            <div class="connection-item">
+              <p class='subtitle'>Hostname</p>
+              <p>{{plainHostname}}</p>
+            </div>
+            <div class="connection-item">
+              <p class="subtitle">Port</p>
+              <p>{{electrsPort}}</p>
+            </div>
+            <div class="connection-item">
+              <p class="subtitle">SSL</p>
+              <p>Disabled by default</p>
+            </div>
+            <div class="connection-item">
+              <p class="subtitle">Protocol</p>
+              <p>JSON-RPC v2.0</p>
+            </div>
+            <div class="connection-item">
+              <p class="subtitle">Protocol Version</p>
+              <p>1.4</p>
+            </div>
+          </div>
+
+          <p class="note">The default Nito ElectrumX service exposes plain TCP on port {{electrsPort}}. Add TLS at the service or proxy layer when publishing a public endpoint.</p>
+          
+          <div class="protocol-info">
+            <h3>Request Format</h3>
+            <p>All requests must be valid JSON-RPC 2.0 messages.</p>
+            <pre><code>{{'{'}}"jsonrpc": "2.0", "id": 1, "method": "method.name", "params": []{{'}'}}</code></pre>
+          </div>
+        </div>
+
+        <div class="doc-item-container" *ngFor="let item of electrumDocs">
+          <div *ngIf="!item.hasOwnProperty('options') || ( item.hasOwnProperty('options') && item.options.hasOwnProperty('officialOnly') && item.options.officialOnly && officialMempoolInstance )">
+            <h3 *ngIf="( item.type === 'category' ) && ( item.showConditions.indexOf(network.val) > -1 )">{{ item.title }}</h3>
+            <div *ngIf="( item.type !== 'category' ) && ( item.showConditions.indexOf(network.val) > -1 )" class="endpoint-container" id="{{ item.fragment }}">
+              <a id="{{ item.fragment + '-tab-header' }}" class="section-header" (click)="anchorLinkClick({event: $event, fragment: item.fragment})">{{ item.title }} <span>{{ item.category }}</span></a>
+              <div class="endpoint-content">
+                <div class="description">
+                  <div class="subtitle" i18n>Description</div>
+                  <div [innerHTML]="item.description.default" i18n></div>
+                </div>
+                <div class="electrum-example">
+                  <div class="subtitle">Request Example</div>
+                  <div class="code-block">
+                    <p class="code-label">Using netcat:</p>
+                    <pre><code>printf '%s\n' '{{item.requestExample}}' | nc {{plainHostname}} {{electrsPort}}</code></pre>
+                  </div>
+                  <div class="code-block">
+                    <p class="code-label">Raw JSON-RPC Request:</p>
+                    <pre><code>{{item.requestExample}}</code></pre>
+                  </div>
+                </div>
+                <div class="electrum-example">
+                  <div class="subtitle">Response Example</div>
+                  <pre><code>{{item.responseExample}}</code></pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</ng-container>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<ng-template type="what-are-vb-wu">
+  <p>Virtual bytes (vB) and weight units (WU) are used to measure the size of transactions and blocks on the Nito network.</p>
+  <p>A Nito transaction's size in the blockchain is <i>not</i> determined how much nito it transfers—instead, a transaction's size is determined by technical factors such as how many inputs and outputs it has, how many signatures it has, and the format it uses (legacy, SegWit, etc). Since space in the Nito blockchain is limited, bigger transactions pay more in mining fees than smaller transactions.</p>
+  <p>Block sizes are limited to 4,000,000 WU (or 1,000,000 vB since 1 vB = 4 WU).</p>
+  <p>Transaction sizes and block sizes used to be measured in plain bytes, but virtual bytes and weight units were devised to maintain backward compatibility after the SegWit upgrade in 2017. SegWit block size is calculated based on weight units (WU).</p>
+</ng-template>
+
+<ng-template type="what-is-svb">
+  <p>The priority of a pending Nito transaction is determined by its feerate. Feerates are measured in nitoshi/vB.</p>
+  <p>Using a higher nitoshi/vB feerate for a Nito transaction will generally result in quicker confirmation than using a lower feerate. But feerates change all the time, so it's important to check suggested feerates right before making a transaction to <a [routerLink]="['/docs/faq' | relativeUrl]" fragment="why-is-transaction-stuck-in-mempool">avoid it from getting stuck</a>.</p>
+  <p>There are feerate estimates on the top of <a [routerLink]="['/' | relativeUrl]">the main dashboard</a> you can use as a guide. See <a [routerLink]="['/docs/faq' | relativeUrl]" fragment="looking-up-fee-estimates">this FAQ</a> for more on picking the right feerate.</p>
+</ng-template>
+
+<ng-template type="why-is-transaction-stuck-in-mempool">
+  <p>If it's been a while and your transaction hasn't confirmed, your transaction is probably using a lower feerate relative to other transactions currently in the mempool. Depending on how you made your transaction, there may be <a [routerLink]="['/docs/faq' | relativeUrl]" fragment="how-to-get-transaction-confirmed-quickly">ways to accelerate the process</a>.</p><p>There's no need to panic—a Nito transaction will always either confirm completely (or not at all) at some point. As long as you have your transaction's ID, you can always see where your funds are.</p><p>This site only provides data about the Nito network. To get help with a transaction, get in touch with the entity that helped make the transaction (wallet software, exchange company, etc).</p>
+</ng-template>
+
+
+
+<ng-template type="how-prevent-stuck-transaction">
+  <p>You must use an adequate transaction fee commensurate with how quickly you need the transaction to be confirmed. See Nito Mempool's Explorer's fee estimates on the <a [routerLink]="['/' | relativeUrl]">front page</a>.</p><p>Also consider using RBF (if your wallet supports it) so that you can bump the feerate on your transaction if it does end up getting stuck.</p>
+</ng-template>
+
+<ng-template type="looking-up-transactions">
+  Search for the transaction ID in the search box at the top-right of this website.
+</ng-template>
+
+<ng-template type="looking-up-addresses">
+  Search for the address in the search box at the top-right of this website.
+</ng-template>
+
+<ng-template type="looking-up-blocks">
+  Search for the block number (or block hash) in the search box at the top-right of this website.
+</ng-template>
+
+<ng-template type="looking-up-fee-estimates">
+  <p>See real-time fee estimates on <a [routerLink]="['/' | relativeUrl]">the main dashboard</a>.</p><p>Here is an overview of Nito Mempool's Explorer's feerate suggestions:</p><ul> <li><b>High Priority.</b> This figure is the median feerate of transactions in the <a [routerLink]="['/mempool-block/0' | relativeUrl]">first mempool block</a>. Consider using this feerate if you want confirmation as soon as possible.</li><li><b>Medium Priority.</b> This figure is the average of the median feerate of the <a [routerLink]="['/mempool-block/0' | relativeUrl]">first mempool block</a> and the median feerate of the <a [routerLink]="['/mempool-block/1' | relativeUrl]">second mempool block</a>.</li><li><b>Low Priority.</b> This figure is the average of the Medium Priority feerate and the median feerate of the <a [routerLink]="['/mempool-block/2' | relativeUrl]">third mempool block</a>. Consider using this feerate if you want confirmation soon but don't need it particularly quickly.</li><li><b>No Priority.</b> This figure is either 2x the minimum feerate, or the Low Priority feerate (whichever is lower). Consider using this feerate if you are in no rush and don't mind if confirmation takes a while.</li></ul><p>In all cases, the suggested feerate is adjusted lower if any of the mempool blocks involved in the calculation are not full (example: if there is only 1 mempool block that's less than half-full, Nito Mempool's Explorer will suggest a feerate of 1 nitoshi/vB—not the median feerate of transactions in the block).</p><p>Mempool blocks use feerates, transaction sizes, and other metrics to <b>forecast</b> which transactions will be in future blocks. Actual blocks will turn out to be different: miners have their own views of the mempool, their own algorithms for determining which transactions to include in a block, etc.</p><p>Ultimately, the Nito network is not perfectly predictable, so fee estimation cannot be perfectly precise.</p><p><b>Use Nito Mempool's Explorer's feerate suggestions as a guide, and understand that they do not guarantee transaction confirmation in any period of time.</b></p>
+</ng-template>
+
+<ng-template type="looking-up-historical-trends">
+  See the <a [routerLink]="['/graphs' | relativeUrl]">graphs page</a> for aggregate trends over time: mempool size over time and incoming transaction velocity over time.
+</ng-template>
+
+<ng-template type="what-is-full-mempool">
+  <p>When a Nito transaction is made, it is stored in a Nito node's mempool before it is confirmed into a block. When the rate of incoming transactions exceeds the rate transactions are confirmed, the mempool grows in size.</p><p>By default, Nito Core allocates 25MB of memory for its mempool, so when a node's mempool grows big enough to use all 25MB of allocated memory, we say it's "full".</p><p>Once a node's mempool is using all of its allocated memory, it will start rejecting new transactions below a certain feerate threshold—so when this is the case, be extra sure to set a feerate that (at a minimum) exceeds that threshold. The current threshold feerate (and memory usage) are displayed right on Nito Mempool's Explorer's front page.</p>
+</ng-template>
+
+<ng-template type="how-big-is-mempool-used-by-nito-explorer">
+  <p>Nito Mempool's Explorer uses multiple Nito nodes to obtain data: some with the default 25MB mempool memory limit (call these Small Nodes) and others with a much larger mempool memory limit (call these Big Nodes).</p>
+  <p>Many nodes on the Nito network are configured to run with the default 25MB mempool memory setting. When all 25MB of memory are used up, such nodes will reject transactions below a certain threshold feerate. Running Small Nodes allows Nito Mempool's Explorer to tell you what this threshold feerate is—this is the "Purging" feerate that shows on the front page when mempools are full, which you can use to be reasonably sure that your transaction will be widely propagated.</p>
+    <p>Big Node mempools are so big that they don't need to reject (or purge) transactions. Such nodes allow for Nito Mempool's Explorer to provide you with information on any pending transaction it has received—no matter how congested the mempool is, and no matter how low-feerate or low-priority the transaction is.</p>
+</ng-template>
+
+
+
+
+
+
+
+<ng-template type="why-dont-fee-ranges-match">
+  <p>Nito Mempool's Explorer aims to show you the <i>effective feerate</i> range for blocks—how much would you actually need to pay to get a transaction included in a block.</p>
+  <p>A transaction's effective feerate is not always the same as the feerate explicitly set for it. For example, if you see a 1 nitoshi/vB transaction in a block with a displayed feerate range of 5 nitoshi/vB to 72 nitoshi/vB, chances are that 1 nitoshi/vB transaction had a high-feerate child transaction that boosted its effective feerate to 5 nitoshi/vB or higher (this is how CPFP fee-bumping works). In such a case, it would be misleading to use 1 nitoshi/vB as the lower bound of the block's feerate range since it actually required more than 1 nitoshi/vB to confirm that transaction in that block.</p>
+  <p>You can find a transaction's feerate on its transaction details page. If the transaction has any CPFP relationships, the page will also show the transaction's effective feerate along with links to descendent and/or ancestor transactions.</p>
+</ng-template>
+
+<ng-template type="how-do-block-audits-work">
+  <p>A block audit visually compares Nito Mempool's Explorer's expected block to the actual block for a particular block height.</p>
+  <p>How is the expected block determined? Nito Mempool's Explorer follows the transaction ordering returned by Nito Core's block template and checks that view against its current mempool (<a href="https://github.com/NitoNetwork/mempool-Nito-Explorer/blob/main/backend/src/api/mempool-blocks.ts" target="_blank">source code</a>). The projection is refreshed regularly and may change as transactions arrive, leave, or become ineligible.</p>
+  <p>At the moment a new block is mined, Nito Mempool's Explorer saves a snapshot of its projected block template for the next block. We call this snapshot the <b>expected block</b> for the block height in question, and it serves as the basis for the block audit.</p>
+  <p>When details for an expected block and actual block are available, we can compare them. <b>The purpose of block audits is to deduce when miners intentionally include or exclude transactions from blocks they mine.</b> Since this information cannot be precisely known, Nito Mempool's Explorer uses a handful of heuristics to accomplish this.</p>
+  <p>Block audits highlight transactions in different colors to convey these heuristics:</p>
+  <ul class="no-bull block-audit">
+    <li><span class="block-audit-highlight-color added">■</span><code>Added</code><p>A transaction is highlighted blue if it is not present in the expected block, present in the actual block, and also either:</p>
+    <ul>
+      <li>far out of the expected feerate range, meaning the miner may have intentionally prioritized the transaction</li>
+      <li>not in the mempool at all, meaning the miner may have accepted the transaction out-of-band</li>
+    </ul>
+    <p>Added transactions do not negatively affect <a [routerLink]="['/docs/faq' | relativeUrl]" fragment="what-is-block-health">block health</a>.</p></li>
+    <li><span class="block-audit-highlight-color recent">■</span><code>Recently broadcasted</code><p>A transaction is highlighted dark pink if it is present in the expected block, not present in the actual block, and was first seen by Nito Mempool's Explorer's node within 3 minutes of the block being mined.</p><p>Due to network latency and other factors, it can take time for a miner's Nito nodes to receive a transaction, so we do not assume a miner has intentionally excluded such a transaction from a block.</p><p>Recently-broadcasted transactions do not negatively affect <a [routerLink]="['/docs/faq' | relativeUrl]" fragment="what-is-block-health">block health</a>.</p></li>
+    <li><span class="block-audit-highlight-color marginal">■</span><code>Marginal fee</code>
+    <p>A transaction is darkened if it is in the low end of the expected feerate range and missing in either the expected block or the actual block.</p><p>Such a transaction may have been displaced by an added transaction, or it may have been displaced by another transaction from the mempool that was also at the low end of the expected feerate range for the block. In either case, the deviation is not considered notable.</p>
+    <p>Marginal fee transactions do not negatively affect <a [routerLink]="['/docs/faq' | relativeUrl]" fragment="what-is-block-health">block health</a>.</p></li>
+    <li><span class="block-audit-highlight-color removed">■</span><code>Removed</code><p>A transaction is highlighted bright pink if it is present in the expected block, not present in the actual block, and qualifies as neither recently-broadcasted nor marginal-fee. In other words, it has been in the mempool long enough to be widely propagated and has a feerate that is well within the range expected for the block. There is a chance such a transaction may have been intentionally excluded from the block.<p>Removed transactions do negatively affect <a [routerLink]="['/docs/faq' | relativeUrl]" fragment="what-is-block-health">block health</a>.</p></li>
+  </ul>
+  <p>See how results of the block audit are used to devise the block health score <a [routerLink]="['/docs/faq' | relativeUrl]" fragment="what-is-block-health">below</a>.</p>
+    <p class='note'>Because of this feature's resource usage and availability requirements, it is only supported on official Nito Mempool's Explorer instances.</p>
+</ng-template>
+
+
+
+<ng-template type="how-do-transaction-filters-work">
+  <p>Transaction filters can be applied to the <a [routerLink]="['/mempool-block/0' | relativeUrl]">mempool block visualizations</a> to highlight different types of transactions.</p>
+  <p>There are currently 25 transaction filters, grouped into six categories:</p>
+  <dl>
+    <dt>Features</dt>
+    <dd>
+      <dl>
+        <dt>RBF enabled</dt>
+        <dd>The transaction opts-in to BIP-125 replaceability.</dd>
+        <dt>RBF disabled</dt>
+        <dd>The transaction does not opt-in to BIP-125 replaceability.</dd>
+        <dt>Version 1</dt>
+        <dd>The default version for most transactions.</dd>
+        <dt>Version 2</dt>
+        <dd>Required for transactions which use OP_CHECKSEQUENCEVERIFY relative timelocks.</dd>
+      </dl>
+    </dd>
+
+    <dt>Address Types</dt>
+    <dd>
+      <dl>
+        <dt>P2PK</dt>
+        <dd>Pay-to-public-key. A legacy output format most commonly found in old coinbase transactions.</dd>
+        <dt>Bare multisig</dt>
+        <dd>A legacy form of multisig, most commonly used for data embedding schemes (see also "Fake pubkey").</dd>
+        <dt>P2PKH</dt>
+        <dd>Pay-to-public-key-hash. A legacy address type that locks outputs to a public key.</dd>
+        <dt>P2SH</dt>
+        <dd>Pay-to-script-hash. A legacy address type that locks outputs to a <em>redeem script</em>.</dd>
+        <dt>P2WPKH</dt>
+        <dd>Pay-to-witness-public-key-hash. The SegWit version of P2PKH.</dd>
+        <dt>P2WSH</dt>
+        <dd>Pay-to-witness-script-hash. The SegWit version of P2SH.</dd>
+        <dt>Taproot</dt>
+        <dd>Addresses using the SegWit V1 format added in the Taproot upgrade.</dd>
+      </dl>
+    </dd>
+
+    <dt>Behavior</dt>
+    <dd>
+      <dl>
+        <dt>Paid for by child</dt>
+        <dd>The transaction's effective fee rate has been increased by a higher rate CPFP child.</dd>
+        <dt>Pays for parent</dt>
+        <dd>The transaction bumps the effective fee rate of a lower rate CPFP ancestor.</dd>
+        <dt>Replacement</dt>
+        <dd>The transaction replaced a prior version via RBF.</dd>
+      </dl>
+    </dd>
+
+    <dt>Data</dt>
+    <dd>
+      Different methods of embedding arbitrary data in a Nito transaction.
+      <dl>
+        <dt>OP_RETURN</dt>
+        <dt>Fake pubkey</dt>
+        <dd>Data may be embedded in an invalid public key in a P2PK or Bare multisig output. This is a heuristic filter and can be prone to false positives and false negatives.</dd>
+        <dt>Inscription</dt>
+        <dd>Data is embedded in the witness script of a taproot input.</dd>
+      </dl>
+    </dd>
+
+    <dt>Heuristics</dt>
+    <dd>
+      These filters match common types of transactions according to subjective criteria.
+      <dl>
+        <dt>Coinjoin</dt>
+        <dd>A type of collaborative privacy-improving transaction.</dd>
+        <dt>Consolidation</dt>
+        <dd>The transaction condenses many inputs into a few outputs.</dd>
+        <dt>Batch payment</dt>
+        <dd>The transaction sends coins from a few inputs to many outputs.</dd>
+      </dl>
+    </dd>
+
+    <dt>Sighash Flags</dt>
+    <dd>
+      Different ways of signing inputs to Nito transactions. Note that selecting multiple sighash filters will highlight transactions in which each sighash flag is used, but not necessarily in the same input.
+      <dl>
+        <dt>sighash_all</dt>
+        <dt>sighash_none</dt>
+        <dt>sighash_single</dt>
+        <dt>sighash_default</dt>
+        <dt>sighash_anyonecanpay</dt>
+      </dl>
+    </dd>
+  </dl>
+</ng-template>
+
+
+
+
+
+<ng-template type="why-do-the-projected-block-fee-ranges-overlap">
+  <p>The projected mempool blocks represent what we expect the next blocks would look like if they were mined right now, and so each projected block follows all of the same rules and constraints as real mined blocks.</p>
+  <p>Those constraints can sometimes cause transactions with lower fee rates to be included "ahead" of transactions with higher rates.</p>
+  <p>For example, if one projected block has a very small amount of space left, it might be able to fit one more tiny low fee rate transaction, while larger higher fee rate transactions have to wait for the following block.</p>
+  <p>A similar effect can occur when there are a large number of transactions with very many sigops. In that scenario, each projected block can only include up to 80,000 sigops worth of transactions, after which the remaining space can only be filled by potentially much lower fee transactions with zero sigops.</p>
+  <p>In extreme cases this can produce several projected blocks in a row with overlapping fee ranges, as a result of each projected block containing both high-feerate high-sigop transactions and lower feerate zero-sigop transactions.</p>
+</ng-template>
+
+<ng-template type="who-runs-this-website">
+  The official Nito Mempool's Explorer website is operated by Nito Mempool's Explorer. See more information on our <a [routerLink]="['/about']">About page</a>. There are also many unofficial instances of this website operated by individual members of the Nito community.
+</ng-template>
+
+
+
+<ng-template type="host-my-own-instance-server">
+  <p>You can self-host Nito Mempool Explorer with the delivered <a href="https://github.com/NitoNetwork/mempool-Nito-Explorer/tree/main/docker" target="_blank">Docker definitions</a> or the documented manual services. Operating a public instance requires Linux administration, TLS, backups, monitoring, and strict protection of Core, database, and ElectrumX control interfaces.</p>
+</ng-template>
+
+<ng-template type="install-mempool-with-docker">
+  The repository provides reproducible Docker build definitions; it does not promise prebuilt public images. See <a href="https://github.com/NitoNetwork/mempool-Nito-Explorer/tree/main/docker" target="_blank">the Docker documentation</a> and build the pinned sources locally.
+</ng-template>
+
+<ng-template type="address-lookup-issues">
+  <p>If address lookups fail, first verify that Nito ElectrumX is synced and reachable from the explorer backend.</p><p>Nito Network Explorer uses Nito ElectrumX for transparent address history, UTXO lookup, merkle proofs and block transaction indexing. <span *ngIf="(stateService.orchardActivated$ | async)">Bech32x Orchard addresses are private wallet receive identifiers and are not public balance-bearing addresses.</span></p>
+</ng-template>

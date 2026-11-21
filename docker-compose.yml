@@ -1,0 +1,154 @@
+services:
+  # ── MariaDB ──
+  mariadb:
+    image: mariadb:10.11.19@sha256:e5fe75b2b9de0eb9f6f9a4d9c97272fb3a7480e389ccd487a786bab2a12cc0d7
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: "${MARIADB_ROOT_PASSWORD:?Set MARIADB_ROOT_PASSWORD}"
+      MYSQL_DATABASE: "${MARIADB_DATABASE:?Set MARIADB_DATABASE}"
+      MYSQL_USER: "${MARIADB_USER:?Set MARIADB_USER}"
+      MYSQL_PASSWORD: "${MARIADB_PASSWORD:?Set MARIADB_PASSWORD}"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - ./docker/mariadb/init.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    ports:
+      - "127.0.0.1:${MARIADB_PORT:-3306}:3306"
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Nito ElectrumX ──
+  electrumx:
+    image: ${ELECTRUMX_IMAGE:-nito-mempool-electrumx:local}
+    build:
+      context: .
+      dockerfile: docker/electrumx/Dockerfile
+      additional_contexts:
+        orchard_library: ${NITO_ORCHARD_BUILD_DIR:?Build the pinned Orchard library and set NITO_ORCHARD_BUILD_DIR}
+    restart: unless-stopped
+    environment:
+      COIN: "Nito"
+      NET: "${NITO_NETWORK:-mainnet}"
+      DB_DIRECTORY: "/data/electrumx"
+      DB_ENGINE: "leveldb"
+      CORE_RPC_HOST: "${CORE_RPC_HOST:?Set CORE_RPC_HOST}"
+      CORE_RPC_PORT: "${CORE_RPC_PORT:?Set CORE_RPC_PORT}"
+      CORE_RPC_USERNAME: "${CORE_RPC_USERNAME:?Set CORE_RPC_USERNAME}"
+      CORE_RPC_PASSWORD: "${CORE_RPC_PASSWORD:?Set CORE_RPC_PASSWORD}"
+      SERVICES: "tcp://0.0.0.0:51001,rpc://127.0.0.1:8000"
+      REPORT_SERVICES: ""
+      PEER_DISCOVERY: "off"
+      PEER_ANNOUNCE: ""
+      CACHE_MB: "${ELECTRUMX_CACHE_MB:-512}"
+      LOG_LEVEL: "${ELECTRUMX_LOG_LEVEL:-info}"
+      NITO_ORCHARD_LIBRARY: /opt/orchard/libnito_orchard_ffi.so
+      RAYON_NUM_THREADS: "2"
+      ANON_LOGS: "1"
+    volumes:
+      - electrumx_data:/data/electrumx
+    ports:
+      - "127.0.0.1:${ELECTRUMX_PORT:-51001}:51001"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1', 51001), 5); s.close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+
+  # ── Mempool Backend ──
+  backend:
+    image: ${BACKEND_IMAGE:-nito-mempool-backend:local}
+    build:
+      context: .
+      dockerfile: docker/backend/Dockerfile
+    restart: unless-stopped
+    environment:
+      MEMPOOL_BACKEND: "electrum"
+      MEMPOOL_NETWORK: "${NITO_NETWORK:-mainnet}"
+      MEMPOOL_HTTP_PORT: "8999"
+      MEMPOOL_BLOCK_WEIGHT_UNITS: "800000"
+      MEMPOOL_INDEXING_BLOCKS_AMOUNT: "${MEMPOOL_INDEXING_BLOCKS_AMOUNT:-11000}"
+      MEMPOOL_AUTOMATIC_POOLS_UPDATE: "false"
+      MEMPOOL_POOLS_JSON_URL: ""
+      MEMPOOL_POOLS_JSON_TREE_URL: ""
+      MEMPOOL_RUST_GBT: "false"
+      MEMPOOL_POLL_RATE_MS: "${MEMPOOL_POLL_RATE_MS:-2000}"
+      MEMPOOL_USER_AGENT: "nito-mempool-explorer"
+      FIAT_PRICE_ENABLED: "${FIAT_PRICE_ENABLED:-false}"
+      MAXMIND_ENABLED: "false"
+      EXTERNAL_DATA_SERVER_MEMPOOL_API: ""
+      EXTERNAL_DATA_SERVER_MEMPOOL_ONION: ""
+      EXTERNAL_DATA_SERVER_LIQUID_API: ""
+      EXTERNAL_DATA_SERVER_LIQUID_ONION: ""
+      MEMPOOL_SERVICES_API: ""
+      MEMPOOL_SERVICES_ACCELERATIONS: "false"
+      SOCKS5PROXY_ENABLED: "false"
+      SOCKS5PROXY_USE_ONION: "false"
+      LIGHTNING_ENABLED: "false"
+      REPLICATION_ENABLED: "false"
+      STRATUM_ENABLED: "false"
+      REDIS_ENABLED: "false"
+      CORE_RPC_HOST: "${CORE_RPC_HOST:?Set CORE_RPC_HOST}"
+      CORE_RPC_PORT: "${CORE_RPC_PORT:?Set CORE_RPC_PORT}"
+      CORE_RPC_USERNAME: "${CORE_RPC_USERNAME:?Set CORE_RPC_USERNAME}"
+      CORE_RPC_PASSWORD: "${CORE_RPC_PASSWORD:?Set CORE_RPC_PASSWORD}"
+      DATABASE_ENABLED: "true"
+      DATABASE_HOST: "mariadb"
+      DATABASE_PORT: "3306"
+      DATABASE_DATABASE: "${MARIADB_DATABASE:?Set MARIADB_DATABASE}"
+      DATABASE_USERNAME: "${MARIADB_USER:?Set MARIADB_USER}"
+      DATABASE_PASSWORD: "${MARIADB_PASSWORD:?Set MARIADB_PASSWORD}"
+      ELECTRUM_HOST: "electrumx"
+      ELECTRUM_PORT: "51001"
+      ELECTRUM_TLS_ENABLED: "false"
+      MEMPOOL_CONFIG_FILE: "/app/backend/cache/mempool-config.json"
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=64m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    volumes:
+      - backend_cache:/app/backend/cache
+    ports:
+      - "127.0.0.1:${BACKEND_PORT:-8999}:8999"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      electrumx:
+        condition: service_healthy
+
+  # ── Frontend (nginx) ──
+  frontend:
+    image: ${FRONTEND_IMAGE:-nito-mempool-frontend:local}
+    build:
+      context: .
+      dockerfile: docker/frontend/Dockerfile
+      args:
+        NITO_NETWORK: "${NITO_NETWORK:-mainnet}"
+    restart: unless-stopped
+    environment:
+      DOMAIN: "${DOMAIN}"
+      HTTPS_PORT: "${FRONTEND_PORT:-443}"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx/nito-explorer.conf:/etc/nginx/templates/default.conf.template:ro
+      - ${SSL_CERT_PATH}:/etc/nginx/ssl/fullchain.pem:ro
+      - ${SSL_KEY_PATH}:/etc/nginx/ssl/privkey.pem:ro
+    ports:
+      - "${FRONTEND_BIND:-0.0.0.0}:${FRONTEND_PORT:-443}:443"
+      - "${FRONTEND_BIND:-0.0.0.0}:${HTTP_PORT:-80}:80"
+    depends_on:
+      - backend
+      - electrumx
+
+volumes:
+  mariadb_data:
+  electrumx_data:
+  backend_cache:

@@ -1,0 +1,24 @@
+import { Pipe, PipeTransform } from '@angular/core';
+
+@Pipe({
+  name: 'scriptpubkeyType',
+  standalone: false,
+})
+export class ScriptpubkeyTypePipe implements PipeTransform {
+
+  transform(value: string): string {
+    switch (value) {
+      case 'fee':
+        return $localize`Transaction fee`;
+      case 'p2pk':
+        return 'P2PK';
+      case 'op_return':
+        return 'OP_RETURN';
+      case 'private_orchard':
+        return 'Bech32x...';
+      default:
+        return value.toUpperCase();
+    }
+  }
+
+}

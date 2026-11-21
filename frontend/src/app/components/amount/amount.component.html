@@ -1,0 +1,39 @@
+<ng-container *ngIf="!noFiat && ignoreViewMode === false && (viewAmountMode$ | async) === 'fiat' && (conversions$ | async) as conversions; else viewFiatVin">
+  @let quote = rate(conversions);
+  @if (quote !== null) {
+    <span class="fiat">{{ addPlus && money.compare(satoshis, 0) >= 0 ? '+' : '' }}{{ quote * money.approximate(satoshis) / 100000000 | fiatCurrency : digitsInfo : currency }}</span>
+  } @else {
+    <span class="text-muted" title="Nito fiat price unavailable">—</span>
+  }
+</ng-container>
+
+  <ng-template #viewFiatVin>
+  <ng-template [ngIf]="(network === 'liquid' || network === 'liquidtestnet') && (satoshis === undefined || satoshis === null)" [ngIfElse]="default">
+    <span i18n="shared.confidential">Confidential</span>
+  </ng-template>
+  <ng-template #default>
+    @if ((viewAmountMode$ | async) === 'btc' || (viewAmountMode$ | async) === 'fiat' || ignoreViewMode === true) {
+      &lrm;{{ addPlus && money.compare(satoshis, 0) >= 0 ? '+' : '' }}{{ format() }}
+      <span class="symbol">
+        <ng-container *ngTemplateOutlet="prefix"></ng-container>NITO
+      </span>
+    } @else {
+      @if (digitsInfo === '1.8-8') {
+        &lrm;{{ addPlus && money.compare(satoshis, 0) >= 0 ? '+' : '' }}{{ format(0) }}
+      } @else { 
+        &lrm;{{ addPlus && money.compare(satoshis, 0) >= 0 ? '+' : '' }}{{ format(0) }}
+      }
+      <span class="symbol">
+        <ng-container *ngTemplateOutlet="prefix"></ng-container>nitoshi
+      </span>
+    }
+  </ng-template>
+</ng-template>
+
+<ng-template #prefix>
+  <ng-template [ngIf]="network === 'liquid' && !forceBtc">L</ng-template>
+  <ng-template [ngIf]="network === 'liquidtestnet'">tL</ng-template>
+  <ng-template [ngIf]="network === 'testnet'">t</ng-template>
+  <ng-template [ngIf]="network === 'testnet4'">t</ng-template>
+  <ng-template [ngIf]="network === 'signet'">s</ng-template>
+</ng-template>

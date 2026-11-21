@@ -1,0 +1,32 @@
+# Runtime and local secrets
+*.conf
+*.cookie
+*.key
+*.pem
+.env
+.env.*
+
+# ElectrumX runtime data
+db/
+electrumx-data/
+logs/
+*.log
+
+# Python caches
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+build/
+dist/
+.venv/
+venv/
+
+# Generated documentation
+docs/_build/
+
+# Local editor files
+.vscode/
+.idea/

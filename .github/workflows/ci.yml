@@ -1,0 +1,108 @@
+name: Explorer validation
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: explorer-validation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend and vendor integrity
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    services:
+      mariadb:
+        image: mariadb:10.11.19@sha256:e5fe75b2b9de0eb9f6f9a4d9c97272fb3a7480e389ccd487a786bab2a12cc0d7
+        env:
+          MYSQL_DATABASE: mempool_test
+          MYSQL_USER: mempool_test
+          MYSQL_PASSWORD: mempool_test
+          MYSQL_ROOT_PASSWORD: admin
+          MARIADB_AUTO_UPGRADE: "1"
+        ports:
+          - 33306:3306
+        options: >-
+          --health-cmd "healthcheck.sh --connect --innodb_initialized"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - name: Verify pinned ElectrumX import
+        run: python3 scripts/vendor-electrumx.py --check
+      - name: Verify public Orchard provenance helpers
+        run: |
+          python3 scripts/tests/test_build_orchard.py
+          python3 docker/electrumx/test-start.py
+      - name: Verify secure backend configuration rendering
+        run: node docker/backend/test-render-config.mjs
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci --no-install-links
+      - name: Audit and lint backend
+        working-directory: backend
+        run: |
+          npm audit --omit=dev
+          npm run lint -- --quiet
+      - name: Build backend
+        working-directory: backend
+        run: npm run build
+      - name: Run backend tests
+        working-directory: backend
+        run: npm test -- --runInBand
+      - name: Run MariaDB integration tests
+        working-directory: backend
+        env:
+          SKIP_DB_SETUP: "1"
+          SKIP_DB_TEARDOWN: "1"
+        run: npm run test:integration
+
+  frontend:
+    name: Frontend exactness and public build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci --no-install-links
+      - name: Audit and lint frontend
+        working-directory: frontend
+        run: |
+          npm audit --omit=dev --omit=optional
+          npm run lint -- --quiet
+          npx eslint scripts/test-nito-money.cjs scripts/test-nito-features.cjs scripts/test-shared-caches.cjs --quiet
+      - name: Run exact-money and cache tests
+        working-directory: frontend
+        run: |
+          npm run test:money
+          npm run test:features
+          npm run test:shared-cache
+      - name: Build qualified English frontend
+        working-directory: frontend
+        run: npm run build:public

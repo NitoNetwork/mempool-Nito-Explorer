@@ -1,0 +1,79 @@
+[build-system]
+requires = ["setuptools >= 77.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nito-electrumx"
+authors = [
+    { name = "Nito.network" },
+]
+description = "Nito ElectrumX server implementation for the Electrum protocol"
+keywords = ["asyncio", "nito", "electrum", "electrum-server"]
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENCE"]
+requires-python = ">=3.10"
+dependencies = [
+    "aiorpcx[ws]>=0.25.0,<0.26",
+    "attrs",  # TODO try to use stdlib dataclasses instead
+    "plyvel; platform_system != 'Windows'",
+    "plyvel-ci; platform_system == 'Windows'",
+    "aiohttp>=3.14.4,<4",
+    "multidict>=6.9.1,<7",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Framework :: AsyncIO",
+    "Natural Language :: English",
+    "Operating System :: Unix",
+    "Programming Language :: Python :: 3.10",
+    "Topic :: Database",
+    "Topic :: Internet",
+]
+dynamic = ['version']
+
+[project.urls]
+Homepage = "https://github.com/NitoNetwork/electrumx-NITO"
+Repository = "https://github.com/NitoNetwork/electrumx-NITO"
+
+[project.scripts]
+electrumx_server = "electrumx.cli.electrumx_server:main"
+electrumx_rpc = "electrumx.cli.electrumx_rpc:main"
+electrumx_compact_history = "electrumx.cli.electrumx_compact_history:main"
+
+[tool.setuptools.dynamic]
+version = { attr = 'electrumx.__version__' }
+
+[project.optional-dependencies]
+dev = [
+    "objgraph",
+]
+test = [
+    "pytest",
+    "pytest-asyncio",
+    "pyasyncore>=1.0.5; python_version >= '3.12'",
+    "blake256>=0.1.1",
+    "groestlcoin-hash>=1.0.1",
+    "pycryptodomex>=3.8.1",
+]
+rocksdb = [
+    "python-rocksdb>=0.6.9",
+    "Cython<3.0",
+]
+rapidjson = [
+    "python-rapidjson>=0.4.1,<2.0",
+]
+ujson = [
+    "ujson>=2.0.0,<4.0.0",
+]
+uvloop = [
+    "uvloop>=0.14",
+]
+# For various altcoins
+blake256 = ["blake256>=0.1.1", ]
+crypto = ["pycryptodomex>=3.8.1", ]
+groestl = ["groestlcoin-hash>=1.0.1", ]
+tribushashm = ["tribushashm>=1.0.5", ]
+xevan-hash = ["xevan-hash", ]
+dash_hash = ["dash_hash>=1.4", ]
+zny-yespower-0-5 = ["zny-yespower-0-5", ]

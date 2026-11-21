@@ -1,0 +1,29 @@
+[Unit]
+Description=Nito ElectrumX for Nito Explorer
+After=network-online.target nitocoin.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=nito-electrumx
+Group=nito-electrumx
+WorkingDirectory=/var/mempool-nito
+EnvironmentFile=/etc/mempool-nito/electrumx.env
+Environment=PATH=/var/mempool-nito/electrumx-venv/bin:/usr/bin:/bin
+ExecStart=/usr/bin/python3 /var/mempool-nito/bin/nito-electrumx-start.py
+Restart=on-failure
+RestartSec=10
+LimitNOFILE=65535
+Nice=10
+CPUQuota=200%
+IOWeight=25
+MemoryMax=4G
+TasksMax=256
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/mempool-nito/electrumx-data
+
+[Install]
+WantedBy=multi-user.target

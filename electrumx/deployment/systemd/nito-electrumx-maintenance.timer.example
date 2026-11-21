@@ -1,0 +1,11 @@
+[Unit]
+Description=Run Nito ElectrumX history compaction daily
+
+[Timer]
+OnCalendar=*-*-* 04:17:00
+RandomizedDelaySec=10m
+Persistent=true
+Unit=nito-electrumx-maintenance.service
+
+[Install]
+WantedBy=timers.target

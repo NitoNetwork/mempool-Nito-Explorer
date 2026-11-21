@@ -1,0 +1,16 @@
+COIN=Nito
+NET=mainnet
+DB_DIRECTORY=/var/lib/nito-electrumx/db
+DB_ENGINE=leveldb
+DAEMON_URL=http://CHANGE_ME_RPC_USER:CHANGE_ME_RPC_PASSWORD@127.0.0.1:8825/
+# Required with Core V4; build it with tools/build_orchard.py.
+NITO_ORCHARD_LIBRARY=/opt/nito-orchard/target/release/libnito_orchard_ffi.so
+SERVICES=tcp://:50001,ssl://:50003,wss://:50005,rpc://127.0.0.1:8000
+REPORT_SERVICES=tcp://electrum1.nito.network:50001,ssl://electrum1.nito.network:50003,wss://electrum1.nito.network:50005
+SSL_CERTFILE=/etc/letsencrypt/live/electrum1.nito.network/fullchain.pem
+SSL_KEYFILE=/etc/letsencrypt/live/electrum1.nito.network/privkey.pem
+PEER_DISCOVERY=on
+PEER_ANNOUNCE=true
+MAX_SESSIONS=2000
+CACHE_MB=2048
+LOG_LEVEL=info

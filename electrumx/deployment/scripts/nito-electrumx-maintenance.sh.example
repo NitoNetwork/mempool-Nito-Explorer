@@ -1,0 +1,35 @@
+#!/bin/bash
+set -euo pipefail
+LOG=/var/log/nito-electrumx-maintenance.log
+exec >>"$LOG" 2>&1
+printf '\n[%s] maintenance start\n' "$(date -Is)"
+CONF=/var/nito-noeud-electrum/electrum/electrumx.conf
+DB=/var/nito-noeud-electrum/electrum/db
+COMPACT=/home/electrumx/electrumx-venv/bin/electrumx_compact_history
+restart_needed=0
+cleanup() {
+  rc=$?
+  chown -R electrumx:electrumx "$DB" 2>/dev/null || true
+  if [ "$restart_needed" = "1" ]; then
+    systemctl start electrumx 2>/dev/null || true
+  fi
+  printf '[%s] maintenance end rc=%s\n' "$(date -Is)" "$rc"
+  exit "$rc"
+}
+trap cleanup EXIT
+systemctl stop electrumx || true
+restart_needed=1
+sleep 2
+set -a
+. "$CONF"
+set +a
+"$COMPACT"
+chown -R electrumx:electrumx "$DB"
+systemctl start electrumx
+restart_needed=0
+sleep 10
+systemctl is-active --quiet electrumx
+ss -ltn | grep -q ':50001 '
+ss -ltn | grep -q ':50003 '
+ss -ltn | grep -q ':50005 '
+printf '[%s] electrumx active and ports open\n' "$(date -Is)"

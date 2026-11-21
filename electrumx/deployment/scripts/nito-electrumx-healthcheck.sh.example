@@ -1,0 +1,31 @@
+#!/bin/bash
+set -euo pipefail
+LOG=/var/log/nito-electrumx-healthcheck.log
+exec >>"$LOG" 2>&1
+printf '[%s] healthcheck start\n' "$(date -Is)"
+ports_ok() {
+  ss -ltn | grep -q ':50001 ' && ss -ltn | grep -q ':50003 ' && ss -ltn | grep -q ':50005 '
+}
+if systemctl is-active --quiet electrumx && ports_ok; then
+  printf '[%s] ok\n' "$(date -Is)"
+  exit 0
+fi
+if journalctl -u electrumx -n 300 -o cat --no-pager | grep -Eq "flush count: 65,535|struct\.error: 'H' format requires"; then
+  printf '[%s] history flush limit detected, running maintenance\n' "$(date -Is)"
+  /usr/local/sbin/nito-electrumx-maintenance.sh
+  exit $?
+fi
+printf '[%s] service/ports not healthy, restarting electrumx\n' "$(date -Is)"
+systemctl restart electrumx || true
+sleep 10
+if systemctl is-active --quiet electrumx && ports_ok; then
+  printf '[%s] recovered by restart\n' "$(date -Is)"
+  exit 0
+fi
+if journalctl -u electrumx -n 300 -o cat --no-pager | grep -Eq "flush count: 65,535|struct\.error: 'H' format requires"; then
+  printf '[%s] flush limit after restart, running maintenance\n' "$(date -Is)"
+  /usr/local/sbin/nito-electrumx-maintenance.sh
+  exit $?
+fi
+printf '[%s] unhealthy after restart, manual check required\n' "$(date -Is)"
+exit 1

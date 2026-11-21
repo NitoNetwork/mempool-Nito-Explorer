@@ -1,0 +1,6 @@
+@let quote = rate(conversions$ | async);
+@if (quote !== null) {
+  <span [class]="colorClass">{{ quote * money.approximate(value) / 100000000 | fiatCurrency : digitsInfo : currency }}</span>
+} @else {
+  <span class="text-muted" title="Nito fiat price unavailable">—</span>
+}

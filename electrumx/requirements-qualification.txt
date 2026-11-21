@@ -1,0 +1,2 @@
+# Additional host-side process-tree RSS/CPU and owned-process cleanup tooling.
+psutil==7.2.2

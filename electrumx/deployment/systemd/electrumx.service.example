@@ -1,0 +1,17 @@
+[Unit]
+Description=ElectrumX server for NITO
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=electrumx
+Group=electrumx
+EnvironmentFile=/etc/electrumx.conf
+ExecStart=/opt/electrumx-NITO/venv/bin/electrumx_server
+Restart=always
+RestartSec=10
+LimitNOFILE=65535
+TimeoutStopSec=60
+
+[Install]
+WantedBy=multi-user.target

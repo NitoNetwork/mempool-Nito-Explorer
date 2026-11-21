@@ -1,0 +1,10 @@
+<ng-container *ngIf="rateUnits$ | async as units">
+  <ng-container *ngIf="fee != null && money.approximate(fee) >= 0 && weight > 0; else noFee">
+    <ng-container *ngIf="units !== 'wu'">{{ money.approximate(fee) / (weight / 4) | feeRounding:rounding:dp }} <span *ngIf="showUnit" [class]="unitClass" [style]="unitStyle" i18n="shared.sat-vbyte|nitoshi/vB">nitoshi/vB</span></ng-container>
+    <ng-container *ngIf="units === 'wu'">{{ money.approximate(fee) / weight | feeRounding:rounding:dp }} <span *ngIf="showUnit" [class]="unitClass" [style]="unitStyle" i18n="shared.sat-weight-units|sat/WU">sat/WU</span></ng-container>
+  </ng-container>
+  <ng-template #noFee>
+      <ng-container *ngIf="units !== 'wu'">- <span *ngIf="showUnit" [class]="unitClass" [style]="unitStyle" i18n="shared.sat-vbyte|nitoshi/vB">nitoshi/vB</span></ng-container>
+      <ng-container *ngIf="units === 'wu'">- <span *ngIf="showUnit" [class]="unitClass" [style]="unitStyle" i18n="shared.sat-weight-units|sat/WU">sat/WU</span></ng-container>
+  </ng-template>
+</ng-container>

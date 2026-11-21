@@ -1,0 +1,11 @@
+**
+!electrumx/
+!electrumx/**
+!electrumx-provenance.json
+!scripts/
+!scripts/vendor-electrumx.py
+!scripts/build-orchard.py
+!docker/
+!docker/electrumx/
+!docker/electrumx/requirements.lock
+!docker/electrumx/start.py

@@ -1,0 +1,37 @@
+[Unit]
+Description=Nito Mempool Explorer backend
+After=mariadb.service nito-electrumx.service nitocoin.service
+Wants=nito-electrumx.service
+
+[Service]
+Type=simple
+User=nito-mempool
+Group=nito-mempool
+WorkingDirectory=/var/mempool-nito/backend
+Environment=NODE_ENV=production
+Environment=MEMPOOL_CONFIG_FILE=/var/mempool-nito/backend/mempool-config.json
+ExecStart=/usr/bin/node --max-old-space-size=2048 dist/index.js
+Restart=on-failure
+RestartSec=10
+UMask=0027
+NoNewPrivileges=true
+PrivateDevices=true
+PrivateTmp=true
+ProtectClock=true
+ProtectControlGroups=true
+ProtectHome=true
+ProtectKernelLogs=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ProtectSystem=strict
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictNamespaces=true
+RestrictSUIDSGID=true
+LockPersonality=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+SystemCallArchitectures=native
+ReadWritePaths=/var/mempool-nito/backend/cache
+
+[Install]
+WantedBy=multi-user.target

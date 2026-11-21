@@ -1,0 +1,7 @@
+[Unit]
+Description=Nito ElectrumX healthcheck and self-healing
+After=network.target nitod.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/nito-electrumx-healthcheck.sh

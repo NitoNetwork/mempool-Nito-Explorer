@@ -1,0 +1,7 @@
+[Unit]
+Description=Nito ElectrumX history compaction maintenance
+After=network.target nitod.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/nito-electrumx-maintenance.sh

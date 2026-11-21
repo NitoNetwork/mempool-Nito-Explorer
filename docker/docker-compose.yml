@@ -1,0 +1,4 @@
+# Nito uses the source-built stack in the repository root.
+# Run: docker compose --env-file ../.env -f docker-compose.yml up --build
+include:
+  - path: ../docker-compose.yml

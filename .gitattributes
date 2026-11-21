@@ -1,0 +1,7 @@
+# ignore all differences in line endings
+package.json eol=crlf -crlf
+*/package.json eol=crlf -crlf
+
+# Preserve exact bytes from the validated upstream Git archive on every OS.
+electrumx/** -text
+docker/backend/start.sh text eol=lf

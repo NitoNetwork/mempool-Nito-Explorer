@@ -1,0 +1,595 @@
+import { money, Nitoshi } from '@app/shared/nito-money';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, HostListener, Inject, Input, LOCALE_ID, NgZone, OnInit } from '@angular/core';
+import { EChartsOption } from '@app/graphs/echarts';
+import { Observable } from 'rxjs';
+import { catchError, map, share, startWith, switchMap, tap } from 'rxjs/operators';
+import { ApiService } from '@app/services/api.service';
+import { SeoService } from '@app/services/seo.service';
+import { formatNumber } from '@angular/common';
+import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
+import { download, formatterXAxis } from '@app/shared/graphs.utils';
+import { ActivatedRoute, Router } from '@angular/router';
+import { FiatShortenerPipe } from '@app/shared/pipes/fiat-shortener.pipe';
+import { FiatCurrencyPipe } from '@app/shared/pipes/fiat-currency.pipe';
+import { StateService } from '@app/services/state.service';
+import { MiningService } from '@app/services/mining.service';
+import { StorageService } from '@app/services/storage.service';
+import { RelativeUrlPipe } from '@app/shared/pipes/relative-url/relative-url.pipe';
+
+@Component({
+  selector: 'app-block-fees-subsidy-graph',
+  templateUrl: './block-fees-subsidy-graph.component.html',
+  styleUrls: ['./block-fees-subsidy-graph.component.scss'],
+  styles: [`
+    .loadingGraphs {
+      position: absolute;
+      top: 50%;
+      left: calc(50% - 15px);
+      z-index: 99;
+    }
+  `],
+  standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class BlockFeesSubsidyGraphComponent implements OnInit {
+  @Input() right: number | string = 45;
+  @Input() left: number | string = 75;
+
+  miningWindowPreference: string;
+  radioGroupForm: UntypedFormGroup;
+
+  chartOptions: EChartsOption = {};
+  chartInitOptions = {
+    renderer: 'svg',
+  };
+
+  statsObservable$: Observable<any>;
+  data: any;
+  isLoading = true;
+  formatNumber = formatNumber;
+  timespan = '';
+  chartInstance: any = undefined;
+  displayMode: 'normal' | 'fiat' | 'percentage' = 'normal';
+  updateZoom = false;
+  zoomSpan = 100;
+  zoomTimeSpan = '';
+  legend: { mode: 'normal' | 'fiat' | 'percentage', subsidy: boolean, fees: boolean } = { mode: 'normal', subsidy: true, fees: true };
+
+  private readonly subsidyLabel = $localize`:@@graphs.blockFeesSubsidy.subsidy:Subsidy`;
+  private readonly feesLabel = $localize`:@@graphs.blockFeesSubsidy.fees:Fees`;
+  private readonly subsidyUsdLabel = $localize`:@@graphs.blockFeesSubsidy.subsidyUsd:Subsidy (USD)`;
+  private readonly feesUsdLabel = $localize`:@@graphs.blockFeesSubsidy.feesUsd:Fees (USD)`;
+  private readonly subsidyPercentLabel = $localize`:@@graphs.blockFeesSubsidy.subsidyPercent:Subsidy (%)`;
+  private readonly feesPercentLabel = $localize`:@@graphs.blockFeesSubsidy.feesPercent:Fees (%)`;
+
+  constructor(
+    @Inject(LOCALE_ID) public locale: string,
+    private seoService: SeoService,
+    private apiService: ApiService,
+    private formBuilder: UntypedFormBuilder,
+    public stateService: StateService,
+    private storageService: StorageService,
+    private miningService: MiningService,
+    private route: ActivatedRoute,
+    private router: Router,
+    private zone: NgZone,
+    private fiatShortenerPipe: FiatShortenerPipe,
+    private fiatCurrencyPipe: FiatCurrencyPipe,
+    private cd: ChangeDetectorRef,
+  ) {
+    this.radioGroupForm = this.formBuilder.group({ dateSpan: '1y' });
+    this.radioGroupForm.controls.dateSpan.setValue('1y');
+
+  }
+
+  ngOnInit(): void {
+    this.seoService.setTitle($localize`:@@41545303ec98792b738d6237adbd1f3b54a22196:Block Fees Vs Subsidy`);
+    this.seoService.setDescription($localize`:@@meta.description.bitcoin.graphs.block-fees-subsidy:See the mining fees earned per Nito block compared to the observed Nito block subsidy, visualized in NITO and USD over time.`);
+
+    this.miningWindowPreference = this.miningService.getDefaultTimespan('24h');
+    this.radioGroupForm = this.formBuilder.group({ dateSpan: this.miningWindowPreference });
+    this.radioGroupForm.controls.dateSpan.setValue(this.miningWindowPreference);
+
+    try {
+      this.legend = JSON.parse(this.storageService.getValue('fees_subsidy_legend'));
+      if (!this.legend) {
+        this.legend = { mode: 'normal', subsidy: true, fees: true };
+      }
+      this.displayMode = this.legend.mode;
+    } catch (e) {
+      this.storageService.removeItem('fees_subsidy_legend');
+    }
+
+    this.route
+    .fragment
+    .subscribe((fragment) => {
+      if (['24h', '3d', '1w', '1m', '3m', '6m', '1y', '2y', '3y', 'all'].indexOf(fragment) > -1) {
+        this.radioGroupForm.controls.dateSpan.setValue(fragment, { emitEvent: false });
+      }
+    });
+
+    this.statsObservable$ = this.radioGroupForm.get('dateSpan').valueChanges
+      .pipe(
+        startWith(this.radioGroupForm.controls.dateSpan.value),
+        switchMap((timespan) => {
+          this.isLoading = true;
+          this.storageService.setValue('miningWindowPreference', timespan);
+          this.timespan = timespan;
+          this.zoomTimeSpan = timespan;
+          return this.apiService.getHistoricalBlockFees$(timespan)
+            .pipe(
+              tap((response) => {
+                this.data = this.buildSeries(response.body);
+
+                this.prepareChartOptions();
+                this.isLoading = false;
+              }),
+              map((response) => {
+                return {
+                  blockCount: parseInt(response.headers.get('x-total-count'), 10),
+                };
+              }),
+            );
+        }),
+        share()
+      );
+  }
+
+  prepareChartOptions() {
+    let title: object;
+    if (this.data.blockFees.length === 0) {
+      title = {
+        textStyle: {
+          color: 'grey',
+          fontSize: 15
+        },
+        text: $localize`:@@23555386d8af1ff73f297e89dd4af3f4689fb9dd:Indexing blocks`,
+        left: 'center',
+        top: 'center'
+      };
+    }
+
+    this.chartOptions = {
+      title: title,
+      color: [
+        '#ff9f00',
+        '#0aab2f',
+      ],
+      animation: false,
+      grid: {
+        top: 80,
+        bottom: 80,
+        right: this.right,
+        left: this.left,
+      },
+      tooltip: {
+        show: !this.isMobile(),
+        trigger: 'axis',
+        axisPointer: {
+          type: 'line'
+        },
+        backgroundColor: 'rgba(17, 19, 31, 1)',
+        borderRadius: 4,
+        shadowColor: 'rgba(0, 0, 0, 0.5)',
+        textStyle: {
+          color: 'var(--tooltip-grey)',
+          align: 'left',
+        },
+        borderColor: 'var(--active-bg)',
+        formatter: function (data) {
+          if (data.length <= 0) {
+            return '';
+          }
+          let tooltip = `<b style="color: white; margin-left: 2px">${formatterXAxis(this.locale, this.zoomTimeSpan, parseInt(this.data.timestamp[data[0].dataIndex], 10))}</b><br>`;
+          for (let i = data.length - 1; i >= 0; i--) {
+            const tick = data[i];
+            tooltip += `${tick.marker} ${tick.seriesName.split(' ')[0]}: `;
+            if (this.displayMode === 'normal') {tooltip += `${this.exactTick(tick) == null ? 'Unavailable' : money.format(this.exactTick(tick), this.locale) + ' NITO'}<br>`;}
+            else if (this.displayMode === 'fiat') {tooltip += `${this.fiatCurrencyPipe.transform(tick.data, null, 'USD') }<br>`;}
+            else {tooltip += `${formatNumber(tick.data, this.locale, '1.0-2')}%<br>`;}
+          }
+          if (this.displayMode === 'normal') {tooltip += `<div style="margin-left: 2px">${data.some(tick => this.exactTick(tick) == null) ? 'Unavailable' : money.format(money.sum(...data.map(tick => this.exactTick(tick))), this.locale) + ' NITO'}</div>`;}
+          else if (this.displayMode === 'fiat') {tooltip += `<div style="margin-left: 2px">${this.fiatCurrencyPipe.transform(data.reduce((acc, val) => acc + val.data, 0), null, 'USD')}</div>`;}
+          if (['24h', '3d'].includes(this.zoomTimeSpan)) {
+            tooltip += `<small>` + $localize`At block ${'<b style="color: white; margin-left: 2px">' + data[0].axisValue}` + `</small>`;
+          } else {
+            tooltip += `<small>` + $localize`Around block ${'<b style="color: white; margin-left: 2px">' + data[0].axisValue}` + `</small>`;
+          }
+          return tooltip;
+        }.bind(this)
+      },
+      xAxis: this.data.blockFees.length === 0 ? undefined : [
+        {
+          type: 'category',
+          data: this.data.blockHeight,
+          show: false,
+          axisLabel: {
+            hideOverlap: true,
+          }
+        },
+        {
+          type: 'category',
+          data: this.data.timestamp,
+          show: true,
+          position: 'bottom',
+          axisLabel: {
+            color: 'var(--grey)',
+            formatter: (val) => {
+              return formatterXAxis(this.locale, this.timespan, parseInt(val, 10));
+            }
+          },
+          axisTick: {
+            show: false,
+          },
+          axisLine: {
+            show: false,
+          },
+          splitLine: {
+            show: false,
+          },
+        }
+      ],
+      legend: this.data.blockFees.length === 0 ? undefined : {
+        data: [
+          {
+            name: this.subsidyLabel,
+            inactiveColor: 'var(--grey)',
+            textStyle: {
+              color: 'white',
+            },
+            icon: 'roundRect',
+          },
+          {
+            name: this.feesLabel,
+            inactiveColor: 'var(--grey)',
+            textStyle: {
+              color: 'white',
+            },
+            icon: 'roundRect',
+          },
+          {
+            name: this.subsidyUsdLabel,
+            inactiveColor: 'var(--grey)',
+            textStyle: {
+              color: 'white',
+            },
+            icon: 'roundRect',
+          },
+          {
+            name: this.feesUsdLabel,
+            inactiveColor: 'var(--grey)',
+            textStyle: {
+              color: 'white',
+            },
+            icon: 'roundRect',
+          },
+          {
+            name: this.subsidyPercentLabel,
+            inactiveColor: 'var(--grey)',
+            textStyle: {
+              color: 'white',
+            },
+            icon: 'roundRect',
+          },
+          {
+            name: this.feesPercentLabel,
+            inactiveColor: 'var(--grey)',
+            textStyle: {
+              color: 'white',
+            },
+            icon: 'roundRect',
+          },
+        ],
+        selected: {
+          [this.subsidyUsdLabel]: this.displayMode === 'fiat' && this.legend.subsidy,
+          [this.feesUsdLabel]: this.displayMode === 'fiat' && this.legend.fees,
+          [this.subsidyLabel]: this.displayMode === 'normal' && this.legend.subsidy,
+          [this.feesLabel]: this.displayMode === 'normal' && this.legend.fees,
+          [this.subsidyPercentLabel]: this.displayMode === 'percentage' && this.legend.subsidy,
+          [this.feesPercentLabel]: this.displayMode === 'percentage' && this.legend.fees,
+        },
+      },
+      yAxis: this.data.blockFees.length === 0 ? undefined : [
+        {
+          type: 'value',
+          axisLabel: {
+            color: 'var(--grey)',
+            formatter: (val) => {
+              return `${val}${this.displayMode === 'percentage' ? '%' : ' NITO'}`;
+            }
+          },
+          min: 0,
+          max: (value) => {
+            if (this.displayMode === 'percentage') {
+              return 100;
+            }
+          },
+          splitLine: {
+            lineStyle: {
+              type: 'dotted',
+              color: 'var(--transparent-fg)',
+              opacity: 0.25,
+            }
+          },
+        },
+        {
+          type: 'value',
+          position: 'right',
+          axisLabel: {
+            color: 'var(--grey)',
+            formatter: function(val) {
+              return this.fiatShortenerPipe.transform(val, null, 'USD');
+            }.bind(this)
+          },
+          splitLine: {
+            show: false,
+          },
+        },
+      ],
+      series: this.data.blockFees.length === 0 ? undefined : [
+        {
+          name: this.subsidyLabel,
+          yAxisIndex: 0,
+          type: 'bar',
+          barWidth: '90%',
+          stack: 'total',
+          data: this.data.blockSubsidy,
+        },
+        {
+          name: this.feesLabel,
+          yAxisIndex: 0,
+          type: 'bar',
+          barWidth: '90%',
+          stack: 'total',
+          data: this.data.blockFees,
+        },
+        {
+          name: this.subsidyUsdLabel,
+          yAxisIndex: 1,
+          type: 'bar',
+          barWidth: '90%',
+          stack: 'total',
+          data: this.data.blockSubsidyFiat,
+        },
+        {
+          name: this.feesUsdLabel,
+          yAxisIndex: 1,
+          type: 'bar',
+          barWidth: '90%',
+          stack: 'total',
+          data: this.data.blockFeesFiat,
+        },
+        {
+          name: this.subsidyPercentLabel,
+          yAxisIndex: 0,
+          type: 'bar',
+          barWidth: '90%',
+          stack: 'total',
+          data: this.data.blockSubsidyPercent,
+        },
+        {
+          name: this.feesPercentLabel,
+          yAxisIndex: 0,
+          type: 'bar',
+          barWidth: '90%',
+          stack: 'total',
+          data: this.data.blockFeesPercent,
+        },
+      ],
+      dataZoom: this.data.blockFees.length === 0 ? undefined : [{
+        type: 'inside',
+        realtime: true,
+        zoomLock: true,
+        maxSpan: 100,
+        minSpan: 1,
+        moveOnMouseMove: false,
+      }, {
+        showDetail: false,
+        show: true,
+        type: 'slider',
+        brushSelect: false,
+        realtime: true,
+        left: 20,
+        right: 15,
+        selectedDataBackground: {
+          lineStyle: {
+            color: '#fff',
+            opacity: 0.45,
+          },
+        },
+      }],
+    };
+  }
+
+  onChartInit(ec) {
+    this.chartInstance = ec;
+
+    this.chartInstance.on('legendselectchanged', (params) => {
+      if (this.isLoading) {
+        return;
+      }
+
+      let mode: 'normal' | 'fiat' | 'percentage';
+      if (params.name === this.subsidyUsdLabel || params.name === this.feesUsdLabel) {
+        mode = 'fiat';
+      } else if (params.name === this.subsidyPercentLabel || params.name === this.feesPercentLabel) {
+        mode = 'percentage';
+      } else {
+        mode = 'normal';
+      }
+
+      const switchingMode = params.selected[params.name];
+
+      this.legend.mode = mode;
+      this.legend.fees = switchingMode || params.selected[this.feesLabel] || params.selected[this.feesPercentLabel] || params.selected[this.feesUsdLabel];
+      this.legend.subsidy = switchingMode || params.selected[this.subsidyLabel] || params.selected[this.subsidyPercentLabel] || params.selected[this.subsidyUsdLabel];
+      this.storageService.setValue('fees_subsidy_legend', JSON.stringify(this.legend));
+
+      if (this.displayMode === mode) {
+        return;
+      }
+
+      if (switchingMode) {
+        this.displayMode = mode;
+        this.chartInstance.dispatchAction({ type: this.displayMode === 'normal' ? 'legendSelect' : 'legendUnSelect', name: this.subsidyLabel });
+        this.chartInstance.dispatchAction({ type: this.displayMode === 'normal' ? 'legendSelect' : 'legendUnSelect', name: this.feesLabel });
+        this.chartInstance.dispatchAction({ type: this.displayMode === 'fiat' ? 'legendSelect' : 'legendUnSelect', name: this.subsidyUsdLabel });
+        this.chartInstance.dispatchAction({ type: this.displayMode === 'fiat' ? 'legendSelect' : 'legendUnSelect', name: this.feesUsdLabel });
+        this.chartInstance.dispatchAction({ type: this.displayMode === 'percentage' ? 'legendSelect' : 'legendUnSelect', name: this.subsidyPercentLabel });
+        this.chartInstance.dispatchAction({ type: this.displayMode === 'percentage' ? 'legendSelect' : 'legendUnSelect', name: this.feesPercentLabel });
+      }
+    });
+
+    this.chartInstance.on('datazoom', (params) => {
+      if (params.silent || this.isLoading || ['24h', '3d'].includes(this.timespan)) {
+        return;
+      }
+      this.updateZoom = true;
+    });
+
+    this.chartInstance.on('click', (e) => {
+      this.zone.run(() => {
+        if (['24h', '3d'].includes(this.zoomTimeSpan)) {
+          const url = new RelativeUrlPipe(this.stateService).transform(`/block/${e.name}`);
+          if (e.event.event.shiftKey || e.event.event.ctrlKey || e.event.event.metaKey) {
+            window.open(url);
+          } else {
+            this.router.navigate([url]);
+          }
+        }
+      });
+    });
+  }
+
+  @HostListener('document:pointerup', ['$event'])
+  onPointerUp(event: PointerEvent) {
+    if (this.updateZoom) {
+      this.onZoom();
+      this.updateZoom = false;
+    }
+  }
+
+  isMobile() {
+    return (window.innerWidth <= 767.98);
+  }
+
+  private buildSeries(rows: any[]) {
+    const percent = (value: Nitoshi, row: any) => {
+      if (row.avgSubsidy == null) { return null; }
+      const total = money.sum(row.avgFees, row.avgSubsidy);
+      return money.compare(total, 0) > 0 ? money.approximate(value) / money.approximate(total) * 100 : 0;
+    };
+    return {
+      timestamp: rows.map(row => row.timestamp * 1000),
+      blockHeight: rows.map(row => row.avgHeight),
+      exactFees: rows.map(row => row.avgFees),
+      exactSubsidy: rows.map(row => row.avgSubsidy ?? null),
+      blockFees: rows.map(row => money.approximate(row.avgFees) / 100_000_000),
+      blockFeesFiat: rows.map(row => this.stateService.env.HISTORICAL_PRICE && row.USD > 0 ? money.approximate(row.avgFees) / 100_000_000 * row.USD : null),
+      blockFeesPercent: rows.map(row => percent(row.avgFees, row)),
+      blockSubsidy: rows.map(row => row.avgSubsidy == null ? null : money.approximate(row.avgSubsidy) / 100_000_000),
+      blockSubsidyFiat: rows.map(row => row.avgSubsidy != null && this.stateService.env.HISTORICAL_PRICE && row.USD > 0 ? money.approximate(row.avgSubsidy) / 100_000_000 * row.USD : null),
+      blockSubsidyPercent: rows.map(row => percent(row.avgSubsidy, row)),
+    };
+  }
+
+  private exactTick(tick): Nitoshi | null {
+    return tick.seriesIndex === 0 ? this.data.exactSubsidy[tick.dataIndex] : this.data.exactFees[tick.dataIndex];
+  }
+
+  onZoom() {
+    const option = this.chartInstance.getOption();
+    const timestamps = option.xAxis[1].data;
+    const startTimestamp = timestamps[option.dataZoom[0].startValue];
+    const endTimestamp = timestamps[option.dataZoom[0].endValue];
+
+    this.isLoading = true;
+    this.cd.detectChanges();
+
+    const subscription = this.apiService.getBlockFeesFromTimespan$(Math.floor(startTimestamp / 1000), Math.floor(endTimestamp / 1000))
+    .pipe(
+      tap((response) => {
+        const startIndex = option.dataZoom[0].startValue;
+        const endIndex = option.dataZoom[0].endValue;
+
+        // Update series with more granular data
+        const lengthBefore = this.data.timestamp.length;
+        const updated = this.buildSeries(response.body);
+        for (const key of Object.keys(updated)) {
+          this.data[key].splice(startIndex, endIndex - startIndex, ...updated[key]);
+        }
+        option.series[0].data = this.data.blockSubsidy;
+        option.series[1].data = this.data.blockFees;
+        option.series[2].data = this.data.blockSubsidyFiat;
+        option.series[3].data = this.data.blockFeesFiat;
+        option.series[4].data = this.data.blockSubsidyPercent;
+        option.series[5].data = this.data.blockFeesPercent;
+        option.xAxis[0].data = this.data.blockHeight;
+        option.xAxis[1].data = this.data.timestamp;
+        this.chartInstance.setOption(option, true);
+        const lengthAfter = this.data.timestamp.length;
+
+        // Update the zoom to keep the same range after the update
+        this.chartInstance.dispatchAction({
+          type: 'dataZoom',
+          startValue: startIndex,
+          endValue: endIndex + lengthAfter - lengthBefore,
+          silent: true,
+        });
+
+        // Update the chart
+        const newOption = this.chartInstance.getOption();
+        this.zoomSpan = newOption.dataZoom[0].end - newOption.dataZoom[0].start;
+        this.zoomTimeSpan = this.getTimeRangeFromTimespan(Math.floor(this.data.timestamp[newOption.dataZoom[0].startValue] / 1000), Math.floor(this.data.timestamp[newOption.dataZoom[0].endValue] / 1000));
+        this.isLoading = false;
+      }),
+      catchError(() => {
+        const newOption = this.chartInstance.getOption();
+        this.zoomSpan = newOption.dataZoom[0].end - newOption.dataZoom[0].start;
+        this.zoomTimeSpan = this.getTimeRangeFromTimespan(Math.floor(this.data.timestamp[newOption.dataZoom[0].startValue] / 1000), Math.floor(this.data.timestamp[newOption.dataZoom[0].endValue] / 1000));
+        this.isLoading = false;
+        this.cd.detectChanges();
+        return [];
+      })
+    ).subscribe(() => {
+      subscription.unsubscribe();
+      this.cd.detectChanges();
+    });
+  }
+
+  getTimeRangeFromTimespan(from: number, to: number): string {
+    const timespan = to - from;
+    switch (true) {
+      case timespan >= 3600 * 24 * 365 * 4: return 'all';
+      case timespan >= 3600 * 24 * 365 * 3: return '4y';
+      case timespan >= 3600 * 24 * 365 * 2: return '3y';
+      case timespan >= 3600 * 24 * 365: return '2y';
+      case timespan >= 3600 * 24 * 30 * 6: return '1y';
+      case timespan >= 3600 * 24 * 30 * 3: return '6m';
+      case timespan >= 3600 * 24 * 30: return '3m';
+      case timespan >= 3600 * 24 * 7: return '1m';
+      case timespan >= 3600 * 24 * 3: return '1w';
+      case timespan >= 3600 * 24: return '3d';
+      default: return '24h';
+    }
+  }
+
+  onSaveChart() {
+    // @ts-ignore
+    const prevBottom = this.chartOptions.grid.bottom;
+    const now = new Date();
+    // @ts-ignore
+    this.chartOptions.grid.bottom = 40;
+    this.chartOptions.backgroundColor = 'var(--active-bg)';
+    this.chartInstance.setOption(this.chartOptions);
+    download(this.chartInstance.getDataURL({
+      pixelRatio: 2,
+      excludeComponents: ['dataZoom'],
+    }), `block-fees-subsidy-${this.timespan}-${Math.round(now.getTime() / 1000)}.svg`);
+    // @ts-ignore
+    this.chartOptions.grid.bottom = prevBottom;
+    this.chartOptions.backgroundColor = 'none';
+    this.chartInstance.setOption(this.chartOptions);
+  }
+
+}
