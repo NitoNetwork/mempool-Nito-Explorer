@@ -13,7 +13,7 @@ ARG NITO_NETWORK=mainnet
 ARG DOCKER_COMMIT_HASH
 RUN node -e 'const fs=require("fs"), p="mempool-frontend-config.json", c=JSON.parse(fs.readFileSync(p)), n=process.env.NITO_NETWORK; if(!["mainnet","testnet","signet","regtest"].includes(n)) throw Error("Invalid Nito network"); c.ROOT_NETWORK=n==="mainnet"?"":n; for(const k of ["mainnet","testnet","signet","regtest"]) c[k.toUpperCase()+"_ENABLED"]=k===n; fs.writeFileSync(p,JSON.stringify(c));'
 
-# The public image ships only the independently qualified English interface.
+# The public image ships only independently qualified locales.
 RUN npm run build:public
 
 # --- Production image ---

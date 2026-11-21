@@ -277,7 +277,11 @@ class Server {
       if (config.MEMPOOL.BACKEND === 'electrum') {
         await nitoActivation.refresh();
         try { websocketHandler.publishNitoPools(await nitoPools.get()); }
-        catch { websocketHandler.publishNitoPools(null); }
+        catch {
+          // A synchronized activation snapshot remains authoritative while the
+          // matching coinstatsindex result catches up. The last qualified pool
+          // snapshot stays public until replacement or a hard outage/reorg.
+        }
       }
       const pollRate = config.MEMPOOL.POLL_RATE_MS * (indexer.indexerIsRunning() ? 10 : 1);
       if (numHandledBlocks === 0) {

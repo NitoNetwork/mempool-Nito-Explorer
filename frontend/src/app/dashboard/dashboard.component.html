@@ -6,10 +6,9 @@
       @if (nitoPools$ | async; as pools) {
         <div class="row">
           <div class="col-md-4 mb-2">Transparent<br><strong>{{ pools.transparent.chainValue }} NITO</strong></div>
-          <div class="col-md-4 mb-2" *ngIf="(stateService.orchardActivated$ | async)">Orchard<br><strong>{{ pools.orchard.chainValue }} NITO</strong></div>
+          <div class="col-md-4 mb-2" *ngIf="pools.orchard">Orchard<br><strong>{{ pools.orchard.chainValue }} NITO</strong></div>
           <div class="col-md-4 mb-2">Total confirmed<br><strong>{{ pools.total.chainValue }} NITO</strong></div>
         </div>
-        <small>Block {{ pools.blocks }} · {{ pools.chain }} · {{ (stateService.orchardActivated$ | async) ? 'UTXOs plus Orchard pool.' : 'Confirmed public accounting.' }} Unconfirmed transactions excluded.</small>
       } @else {
         <p class="mb-0">Confirmed pool accounting unavailable or synchronizing.</p>
       }

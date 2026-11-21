@@ -139,10 +139,12 @@ export interface Language {
 
 export const languages: Language[] = [
   { code: 'en', name: 'English' },
+  { code: 'fr', name: 'Français' },
 ];
 
-// Retained as source material only. The public build and UI ship English until
-// each translation is reviewed against the Nito-specific interface.
+// Retained as source material only. The public build and UI ship only the
+// languages listed above until each additional translation is reviewed against
+// the Nito-specific interface.
 export const unqualifiedTranslations: Language[] = [
    { code: 'ar', name: 'العربية' },         // Arabic
 // { code: 'bg', name: 'Български' },       // Bulgarian

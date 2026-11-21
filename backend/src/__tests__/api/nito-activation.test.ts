@@ -28,7 +28,23 @@ describe('Core-authoritative Orchard activation', () => {
       expect(state).toMatchObject({ status: height >= 100 ? 'active' : 'inactive', activated: height >= 100,
         blocks: height, bestblockhash: info(height).bestblockhash, privateTxActivationHeight: 100, source: 'core' });
     }
-    expect(changes.filter(state => state.reason === 'chain-changed')).toHaveLength(6);
+    // Ordinary tip changes, including a verified lower tip, are replaced only
+    // after both Core reads agree. They do not create a transient unknown gap.
+    expect(changes.filter(state => state.reason === 'chain-changed')).toHaveLength(0);
+  });
+
+  test('keeps the last verified state while the next ordinary tip is being checked', async () => {
+    const { service, rpc, set } = tracked();
+    set(info(99));
+    const previous = await service.refresh();
+    let finish!: (value: any) => void;
+    set(info(100));
+    rpc.getBlockchainInfo.mockReturnValueOnce(new Promise(resolve => { finish = resolve; }));
+    const pending = service.refresh();
+    expect(service.snapshot()).toBe(previous);
+    expect(service.snapshot()).toMatchObject({ status: 'inactive', blocks: 99 });
+    finish(info(100));
+    await expect(pending).resolves.toMatchObject({ status: 'active', blocks: 100 });
   });
 
   test.each([

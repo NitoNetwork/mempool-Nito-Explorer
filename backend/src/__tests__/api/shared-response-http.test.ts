@@ -83,3 +83,94 @@ test('fences in-flight HTTP work and refuses stale data until the new snapshot i
     expect(loads).toBe(2);
   });
 });
+
+test('keeps the last completed response available while a normal block refreshes', async () => {
+  let loads = 0;
+  const now = Date.now();
+  const clock = jest.spyOn(Date, 'now').mockReturnValue(now);
+  try {
+    await withServer((_req, res) => {
+      res.json({ snapshot: ++loads });
+    }, async url => {
+      const path = '/api/v1/mining/blocks/rewards/1m';
+      expect(await (await fetch(url + path)).json()).toEqual({ snapshot: 1 });
+      // A block normally arrives after the four-second refresh TTL. The last
+      // completed process-wide response still has to be the transition value.
+      clock.mockReturnValue(now + 5000);
+      publicResponses.changingChain();
+      const during = await fetch(url + path);
+      expect(during.status).toBe(200);
+      expect(await during.json()).toEqual({ snapshot: 1 });
+      expect(loads).toBe(1);
+
+      publicResponses.observe('tip-b', []);
+      const fresh = await fetch(url + path);
+      expect(fresh.status).toBe(200);
+      expect(await fresh.json()).toEqual({ snapshot: 2 });
+      expect(loads).toBe(2);
+    });
+  } finally { clock.mockRestore(); }
+});
+
+test('a mempool refresh preserves chain data and refreshes live data only after observe', async () => {
+  const loads = new Map<string, number>();
+  await withServer((req, res) => {
+    const count = (loads.get(req.path) || 0) + 1;
+    loads.set(req.path, count);
+    res.json({ snapshot: count });
+  }, async url => {
+    const chainPath = '/api/v1/mining/blocks/rewards/1m';
+    const livePath = '/api/v1/statistics/2h';
+    expect(await (await fetch(url + chainPath)).json()).toEqual({ snapshot: 1 });
+    expect(await (await fetch(url + livePath)).json()).toEqual({ snapshot: 1 });
+
+    publicResponses.changingMempool(['tx-a']);
+    expect((await fetch(url + chainPath)).status).toBe(200);
+    expect((await fetch(url + livePath)).status).toBe(200);
+    expect(loads.get(chainPath)).toBe(1);
+    expect(loads.get(livePath)).toBe(1);
+
+    publicResponses.observe('tip-a', ['tx-a']);
+    expect(await (await fetch(url + chainPath)).json()).toEqual({ snapshot: 1 });
+    expect(await (await fetch(url + livePath)).json()).toEqual({ snapshot: 2 });
+    expect(loads.get(chainPath)).toBe(1);
+    expect(loads.get(livePath)).toBe(2);
+  });
+});
+
+test('a first request during a normal refresh is loaded instead of being globally refused', async () => {
+  let loads = 0;
+  await withServer((_req, res) => { res.json({ snapshot: ++loads }); }, async url => {
+    publicResponses.changingChain();
+    const response = await fetch(url + '/api/v1/mining/blocks/sizes-weights/1m');
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ snapshot: 1 });
+    expect(loads).toBe(1);
+  });
+});
+
+test('soft observation lets old in-flight work finish once without recaching it', async () => {
+  let finish: (() => void) | undefined;
+  let loads = 0;
+  await withServer((_req, res) => {
+    loads++;
+    const snapshot = loads;
+    finish = () => res.json({ snapshot });
+  }, async url => {
+    const path = '/api/v1/statistics/2h';
+    const old = fetch(url + path);
+    while (!finish) { await new Promise(resolve => setTimeout(resolve, 1)); }
+    publicResponses.observe('tip-b', []);
+    finish();
+    const oldReply = await old;
+    expect(oldReply.status).toBe(200);
+    expect(await oldReply.json()).toEqual({ snapshot: 1 });
+
+    finish = undefined;
+    const fresh = fetch(url + path);
+    while (!finish) { await new Promise(resolve => setTimeout(resolve, 1)); }
+    (finish as () => void)();
+    expect(await (await fresh).json()).toEqual({ snapshot: 2 });
+    expect(loads).toBe(2);
+  });
+});

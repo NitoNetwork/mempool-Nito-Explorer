@@ -12,6 +12,9 @@
           }
         </div>
         <div class="site-options language-selector d-flex justify-content-center align-items-center" [class]="{'services': isServicesPage}">
+          <div class="selector">
+            <app-language-selector></app-language-selector>
+          </div>
           <div class="selector" *ngIf="env.HISTORICAL_PRICE">
             <app-fiat-selector></app-fiat-selector>
           </div>

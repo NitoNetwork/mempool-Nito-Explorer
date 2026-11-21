@@ -14,8 +14,10 @@ export class ElectrsApiService {
   private apiBasePath: string; // network path is /testnet, etc. or '' for mainnet
 
   private requestCache = new Map<string, { subject: BehaviorSubject<any>, expiry: number }>;
-  private publicCache = new Map<string, { value: Observable<any>; expiry: number }>();
+  private publicCache = new Map<string, { value: Observable<any>; expiry: number; settled: boolean }>();
   private latestTip = '';
+  private latestTipHeight = -1;
+  private recentBlocks = new Map<number, string>();
   private cacheGeneration = 0;
   private cacheInvalidated$ = new Subject<void>();
   private connectionAvailable = true;
@@ -31,12 +33,25 @@ export class ElectrsApiService {
     }
     this.apiBasePath = ''; // assume mainnet by default
     this.stateService.networkChanged$.subscribe((network) => {
-      this.invalidateCaches(); this.latestTip = '';
+      this.invalidateCaches(); this.latestTip = ''; this.latestTipHeight = -1; this.recentBlocks.clear();
       this.apiBasePath = network && network !== this.stateService.env.ROOT_NETWORK ? '/' + network : '';
     });
     (this.stateService.blocksSubject$ ?? this.stateService.blocks$).subscribe(blocks => {
-      const tip = blocks[0]?.id ?? '';
-      if (tip !== this.latestTip) { this.invalidateCaches(); this.latestTip = tip; }
+      const tip = blocks[0];
+      const reorg = (!tip && !!this.latestTip) || !!tip && (
+        (this.latestTipHeight >= 0 && tip.height < this.latestTipHeight) ||
+        (tip.height === this.latestTipHeight && !!this.latestTip && tip.id !== this.latestTip) ||
+        blocks.some(block => this.recentBlocks.has(block.height) && this.recentBlocks.get(block.height) !== block.id)
+      );
+      // The first canonical tip fences requests started before chain state was
+      // known. Later ordinary extensions keep immutable confirmed resources.
+      if (reorg || (!this.latestTip && !!tip)) { this.invalidateCaches(); }
+      this.latestTip = tip?.id ?? ''; this.latestTipHeight = tip?.height ?? -1;
+      for (const block of blocks) { this.recentBlocks.set(block.height, block.id); }
+      const minimumHeight = this.latestTipHeight - 100;
+      for (const height of this.recentBlocks.keys()) {
+        if (height < minimumHeight) { this.recentBlocks.delete(height); }
+      }
     });
     this.stateService.connectionState$.subscribe(state => {
       this.connectionAvailable = state === 2;
@@ -75,9 +90,10 @@ export class ElectrsApiService {
     const generation = this.cacheGeneration;
     const cached = this.publicCache.get(key);
     if (cached && cached.expiry > Date.now()) { return this.scopedRequest(generation, () => cached.value, false); }
-    const entry = { value: null as Observable<T>, expiry: Infinity };
+    const entry = { value: null as Observable<T>, expiry: Infinity, settled: false };
     entry.value = this.scopedRequest(generation, load).pipe(tap((value: any) => {
-      entry.expiry = Date.now() + (value?.status?.confirmed || path.startsWith('/api/block') ? 30000 : 2000);
+      entry.settled = true;
+      entry.expiry = value?.status?.confirmed || path.startsWith('/api/block') ? Infinity : Date.now() + 2000;
     }), catchError(error => {
       if (this.publicCache.get(key) === entry) { this.publicCache.delete(key); }
       return throwError(() => error);
@@ -148,7 +164,7 @@ export class ElectrsApiService {
     const path = '/api/tx/' + txId;
     // Drop a completed response after a proven reorg, while concurrent refreshes
     // still share the new in-flight request. Canonical-tip changes fence older requests.
-    if (refresh && this.publicCache.get(this.apiBasePath + path)?.expiry !== Infinity) {
+    if (refresh && this.publicCache.get(this.apiBasePath + path)?.settled) {
       this.publicCache.delete(this.apiBasePath + path);
     }
     const url = this.apiBaseUrl + this.apiBasePath + path;

@@ -105,7 +105,6 @@ export class NitoActivation {
         const raw = await this.rpc.getBlockchainInfo();
         if (generation !== this.generation) { return this.snapshot(); }
         const info = checkedActivationInfo(raw, this.network);
-        if (this.chainInfo && this.chainInfo.bestblockhash !== info.bestblockhash) { this.clearState('chain-changed'); }
         const tip = await this.rpc.getBestBlockHash();
         if (generation !== this.generation) { return this.snapshot(); }
         if (tip !== info.bestblockhash) { throw new InvalidActivation('chain-changed'); }

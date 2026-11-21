@@ -96,13 +96,14 @@ jobs:
         run: |
           npm audit --omit=dev --omit=optional
           npm run lint -- --quiet
-          npx eslint scripts/test-nito-money.cjs scripts/test-nito-features.cjs scripts/test-shared-caches.cjs --quiet
-      - name: Run exact-money and cache tests
+          npx eslint scripts/test-nito-money.cjs scripts/test-nito-features.cjs scripts/test-qualified-locales.cjs scripts/test-shared-caches.cjs --quiet
+      - name: Run exact-money, locale and cache tests
         working-directory: frontend
         run: |
           npm run test:money
           npm run test:features
+          npm run test:locales
           npm run test:shared-cache
-      - name: Build qualified English frontend
+      - name: Build qualified English and French frontend
         working-directory: frontend
         run: npm run build:public

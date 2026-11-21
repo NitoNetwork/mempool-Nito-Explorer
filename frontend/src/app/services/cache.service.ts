@@ -20,6 +20,7 @@ export class CacheService {
   private txCachedAt = new Map<string, number>();
   private generation = 0;
   private latestTip = '';
+  private latestTipHeight = -1;
   private connectionAvailable = true;
   private backendAvailable = true;
 
@@ -36,13 +37,18 @@ export class CacheService {
   ) {
     this.stateService.blocks$.subscribe((blocks) => {
       if (!this.connectionAvailable || !this.backendAvailable) { return; }
-      const tip = blocks[0]?.id;
-      if (tip && tip !== this.latestTip) {
+      const tipBlock = blocks[0];
+      const tip = tipBlock?.id;
+      const reorg = (!tip && !!this.latestTip) || !!tipBlock && (
+        (this.latestTipHeight >= 0 && tipBlock.height < this.latestTipHeight) ||
+        (tipBlock.height === this.latestTipHeight && !!this.latestTip && tipBlock.id !== this.latestTip) ||
+        blocks.some(block => this.blockCache[block.height] && this.blockCache[block.height].id !== block.id)
+      );
+      if (reorg) {
+        this.invalidate(); this.latestTip = tip || ''; this.latestTipHeight = tipBlock?.height ?? -1;
+      } else if (tip && tip !== this.latestTip) {
         this.generation++; this.blockLoading = {};
-        this.txCache = {}; this.txCachedAt.clear(); this.latestTip = tip;
-      }
-      if (blocks.some(block => this.blockCache[block.height] && this.blockCache[block.height].id !== block.id)) {
-        this.resetBlockCache();
+        this.clearUnconfirmedTransactions(); this.latestTip = tip; this.latestTipHeight = tipBlock.height;
       }
       for (const block of blocks) {
         this.addBlockToCache(block);
@@ -55,6 +61,7 @@ export class CacheService {
     this.stateService.networkChanged$.subscribe((network) => {
       this.network = network;
       this.latestTip = '';
+      this.latestTipHeight = -1;
       this.resetBlockCache();
       this.txCache = {};
       this.txCachedAt.clear();
@@ -71,6 +78,15 @@ export class CacheService {
 
   private invalidate(): void {
     this.resetBlockCache(); this.txCache = {}; this.txCachedAt.clear();
+  }
+
+  private clearUnconfirmedTransactions(): void {
+    for (const [txid, transaction] of Object.entries(this.txCache)) {
+      if (!transaction.status?.confirmed) {
+        delete this.txCache[txid];
+        this.txCachedAt.delete(txid);
+      }
+    }
   }
 
   setTxCache(transactions) {

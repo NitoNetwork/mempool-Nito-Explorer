@@ -89,6 +89,55 @@ describe('Nito WebSocket recovery snapshots', () => {
     expect(JSON.parse(handler.getSerializedInitData()).nitoPools.orchard.chainValueNitoshi).toBe('1');
   });
 
+  test('keeps the previous exact inactive pools until the next ordinary tip is qualified', () => {
+    state = inactive; publishActivation(state);
+    handler.publishNitoPools(poolSnapshot(inactive));
+    const previous = JSON.parse(handler.getSerializedInitData()).nitoPools;
+    const next = { ...inactive, blocks: 111, bestblockhash: 'cd'.repeat(32) };
+
+    state = next; publishActivation(state);
+    expect(messages[messages.length - 1]).toEqual({ nitoActivation: next });
+    expect(JSON.parse(handler.getSerializedInitData()).nitoPools).toEqual(previous);
+    expect(handler.getNitoPoolsSnapshot()).toEqual(previous);
+
+    handler.publishNitoPools(poolSnapshot(next));
+    expect(messages[messages.length - 1].nitoPools).toMatchObject({ blocks: 111, bestblockhash: next.bestblockhash });
+    expect(handler.getNitoPoolsSnapshot()).toMatchObject({ blocks: 111, bestblockhash: next.bestblockhash });
+  });
+
+  test('keeps an inactive snapshot fail-closed through activation and swaps only after active accounting arrives', () => {
+    state = inactive; publishActivation(state);
+    handler.publishNitoPools(poolSnapshot(inactive));
+    const previous = handler.getNitoPoolsSnapshot();
+    expect(JSON.stringify(previous)).not.toMatch(/orchard/i);
+
+    state = active; publishActivation(state);
+    expect(handler.getNitoPoolsSnapshot()).toEqual(previous);
+    expect(JSON.stringify(JSON.parse(handler.getSerializedInitData()).nitoPools)).not.toMatch(/orchard/i);
+
+    // A mismatched or incomplete refresh cannot clear the last safe snapshot.
+    handler.publishNitoPools(poolSnapshot(inactive));
+    expect(handler.getNitoPoolsSnapshot()).toEqual(previous);
+    handler.publishNitoPools(poolSnapshot(active));
+    expect(handler.getNitoPoolsSnapshot().orchard.chainValueNitoshi).toBe('1');
+  });
+
+  test('clears active accounting immediately when activation regresses or becomes unknown', () => {
+    state = active; publishActivation(state);
+    handler.publishNitoPools(poolSnapshot(active));
+    expect(handler.getNitoPoolsSnapshot().orchard).toBeDefined();
+
+    state = inactive; publishActivation(state);
+    expect(messages[messages.length - 1]).toEqual({ nitoActivation: inactive, nitoPools: null });
+    expect(handler.getNitoPoolsSnapshot()).toBeNull();
+
+    state = active; publishActivation(state);
+    handler.publishNitoPools(poolSnapshot(active));
+    state = unknown; publishActivation(state);
+    expect(messages[messages.length - 1]).toEqual({ nitoActivation: unknown, nitoPools: null });
+    expect(handler.getNitoPoolsSnapshot()).toBeNull();
+  });
+
   test('lease expiry clears both connected clients and reconnect data while the next RPC is pending', async () => {
     jest.useFakeTimers();
     const { NitoActivation } = jest.requireActual('../../api/nito-activation');

@@ -6,6 +6,7 @@ import { download, formatterXAxis, formatterXAxisLabel } from '@app/shared/graph
 import { formatNumber } from '@angular/common';
 import { StateService } from '@app/services/state.service';
 import { Subscription } from 'rxjs';
+import { getNitoVBytesPerSecondLimit } from '@app/shared/nito-throughput';
 
 const OUTLIERS_MEDIAN_MULTIPLIER = 4;
 
@@ -119,6 +120,9 @@ export class IncomingTransactionsGraphComponent implements OnInit, OnChanges, On
   }
 
   mountChart(): void {
+    const targetVBytesPerSecond = getNitoVBytesPerSecondLimit(this.stateService.env.BLOCK_WEIGHT_UNITS);
+    const observedMaximum = Math.max(0, ...this.data.series[0].map(value => Number(value[1]) || 0));
+    const showCapacityReference = this.template === 'advanced' && observedMaximum >= targetVBytesPerSecond * 0.25;
     //create an array for the echart series
     //similar to how it is done in mempool-graph.component.ts
     const seriesGraph = [];
@@ -133,7 +137,7 @@ export class IncomingTransactionsGraphComponent implements OnInit, OnChanges, On
       lineStyle: {
         width: 3,
       },
-      markLine: {
+      markLine: showCapacityReference ? {
         silent: true,
         symbol: 'none',
         lineStyle: {
@@ -142,13 +146,13 @@ export class IncomingTransactionsGraphComponent implements OnInit, OnChanges, On
           width: 2,
         },
         data: [{
-          yAxis: 1667,
+          yAxis: targetVBytesPerSecond,
           label: {
             show: false,
             color: '#ffffff',
           }
         }],
-      }
+      } : undefined
     });
     if (this.template !== 'widget') {
       seriesGraph.push({
@@ -252,11 +256,12 @@ export class IncomingTransactionsGraphComponent implements OnInit, OnChanges, On
       yAxis: {
         max: (value): number => {
           let cappedMax = value.max;
-          if (this.outlierCappingEnabled && value.max >= (this.medianVbytesPerSecond * OUTLIERS_MEDIAN_MULTIPLIER)) {
+          if (this.outlierCappingEnabled && this.medianVbytesPerSecond > 0 && value.max >= (this.medianVbytesPerSecond * OUTLIERS_MEDIAN_MULTIPLIER)) {
             cappedMax = Math.round(this.medianVbytesPerSecond * OUTLIERS_MEDIAN_MULTIPLIER);
           }
-          // always show the clearing rate line, plus a small margin
-          return Math.max(1800, cappedMax);
+          // Low-traffic Nito periods remain legible. The capacity reference is
+          // shown only when it will not flatten the observed series.
+          return Math.max(10, Math.ceil(cappedMax * 1.1));
         },
         type: 'value',
         axisLabel: {
@@ -280,31 +285,31 @@ export class IncomingTransactionsGraphComponent implements OnInit, OnChanges, On
         right: 10,
         pieces: [{
           gt: 0,
-          lte: 1667,
+          lte: targetVBytesPerSecond,
           color: '#7CB342'
         },
         {
-          gt: 1667,
-          lte: 2000,
+          gt: targetVBytesPerSecond,
+          lte: targetVBytesPerSecond * 1.2,
           color: '#FDD835'
         },
         {
-          gt: 2000,
-          lte: 2500,
+          gt: targetVBytesPerSecond * 1.2,
+          lte: targetVBytesPerSecond * 1.5,
           color: '#FFB300'
         },
         {
-          gt: 2500,
-          lte: 3000,
+          gt: targetVBytesPerSecond * 1.5,
+          lte: targetVBytesPerSecond * 1.8,
           color: '#FB8C00'
         },
         {
-          gt: 3000,
-          lte: 3500,
+          gt: targetVBytesPerSecond * 1.8,
+          lte: targetVBytesPerSecond * 2.1,
           color: '#F4511E'
         },
         {
-          gt: 3500,
+          gt: targetVBytesPerSecond * 2.1,
           color: '#D81B60'
         }],
         outOfRange: {

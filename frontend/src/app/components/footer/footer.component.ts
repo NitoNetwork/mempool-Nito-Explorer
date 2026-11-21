@@ -2,6 +2,7 @@ import { Component, OnInit, ChangeDetectionStrategy, Input } from '@angular/core
 import { StateService } from '@app/services/state.service';
 import { Observable, combineLatest } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { getNitoVBytesPerSecondLimit } from '@app/shared/nito-throughput';
 import { MempoolInfo } from '@interfaces/websocket.interface';
 
 interface MempoolBlocksData {
@@ -28,13 +29,15 @@ export class FooterComponent implements OnInit {
 
   mempoolBlocksData$: Observable<MempoolBlocksData>;
   mempoolInfoData$: Observable<MempoolInfoData>;
-  vBytesPerSecondLimit = 1667;
+  vBytesPerSecondLimit = 1;
   isLoadingWebSocket$: Observable<boolean>;
   mempoolLoadingStatus$: Observable<number>;
 
   constructor(
     private stateService: StateService,
-  ) { }
+  ) {
+    this.vBytesPerSecondLimit = getNitoVBytesPerSecondLimit(this.stateService.env.BLOCK_WEIGHT_UNITS);
+  }
 
   ngOnInit() {
     this.isLoadingWebSocket$ = this.stateService.isLoadingWebSocket$;
@@ -52,19 +55,19 @@ export class FooterComponent implements OnInit {
           const percent = Math.round((Math.min(vbytesPerSecond, this.vBytesPerSecondLimit) / this.vBytesPerSecondLimit) * 100);
 
           let progressColor = '#7CB342';
-          if (vbytesPerSecond > 1667) {
+          if (vbytesPerSecond > this.vBytesPerSecondLimit) {
             progressColor = '#FDD835';
           }
-          if (vbytesPerSecond > 2000) {
+          if (vbytesPerSecond > this.vBytesPerSecondLimit * 1.2) {
             progressColor = '#FFB300';
           }
-          if (vbytesPerSecond > 2500) {
+          if (vbytesPerSecond > this.vBytesPerSecondLimit * 1.5) {
             progressColor = '#FB8C00';
           }
-          if (vbytesPerSecond > 3000) {
+          if (vbytesPerSecond > this.vBytesPerSecondLimit * 1.8) {
             progressColor = '#F4511E';
           }
-          if (vbytesPerSecond > 3500) {
+          if (vbytesPerSecond > this.vBytesPerSecondLimit * 2.1) {
             progressColor = '#D81B60';
           }
 

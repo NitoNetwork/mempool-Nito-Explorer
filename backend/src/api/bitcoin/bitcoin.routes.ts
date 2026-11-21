@@ -24,11 +24,9 @@ import { calculateMempoolTxCpfp } from '../cpfp';
 import { handleError, handleIndexUnavailable } from '../../utils/api';
 import poolsUpdater from '../../tasks/pools-updater';
 import chainTips from '../chain-tips';
-import nitoPools from '../nito-pools-instance';
 import { safeNitoshi } from '../nito-values';
 import nitoActivation from '../nito-activation-instance';
 import { PRIVATE_ADDRESS_ERROR } from '../nito-errors';
-import { publicNitoPools } from '../nito-public-pools';
 
 
 const TXID_REGEX = /^[a-f0-9]{64}$/i;
@@ -55,7 +53,7 @@ class BitcoinRoutes {
       .get(config.MEMPOOL.API_URL_PREFIX + 'nito/pools', async (_req, res) => {
         res.setHeader('Cache-Control', 'no-store');
         try {
-          const value = publicNitoPools(nitoPools.snapshot(), nitoActivation.snapshot());
+          const value = websocketHandler.getNitoPoolsSnapshot();
           if (!value) { throw new Error('Public pool snapshot unavailable'); }
           res.json(value);
         }

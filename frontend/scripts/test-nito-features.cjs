@@ -62,20 +62,22 @@ function paths(routes, prefix = '') {
 }
 const files = ['master-page.module.ts', 'graphs/graphs.routing.module.ts', 'previews.routing.module.ts'];
 const sample = JSON.parse(fs.readFileSync(path.join(root, 'frontend/mempool-frontend-config.sample.json'), 'utf8'));
-for (const field of ['LIGHTNING', 'LIQUID_ENABLED', 'LIQUID_TESTNET_ENABLED', 'ACCELERATOR', 'PUBLIC_ACCELERATIONS', 'STRATUM_ENABLED', 'WALLETS_ENABLED', 'HISTORICAL_PRICE', 'AUDIT']) {
+for (const field of ['LIGHTNING', 'LIQUID_ENABLED', 'LIQUID_TESTNET_ENABLED', 'ACCELERATOR', 'PUBLIC_ACCELERATIONS', 'STRATUM_ENABLED', 'WALLETS_ENABLED', 'AUDIT']) {
   assert.equal(sample[field], false, field + ' must be disabled in the delivered Nito profile');
 }
+assert.equal(sample.HISTORICAL_PRICE, true, 'qualified NITO/USD price history must be enabled');
+assert.equal(sample.ADDITIONAL_CURRENCIES, false, 'unqualified historical FX must remain disabled');
 const configured = { ...sample, LIGHTNING: true, ACCELERATOR: true, STRATUM_ENABLED: true,
   WALLETS_ENABLED: true, HISTORICAL_PRICE: true, AUDIT: true, OFFICIAL_MEMPOOL_SPACE: true };
 const disabledPaths = files.flatMap(file => paths(routes('frontend/src/app/' + file, sample)));
 const configuredPaths = files.flatMap(file => paths(routes('frontend/src/app/' + file, configured)));
 for (const forbidden of ['lightning', 'graphs/lightning', 'acceleration', 'acceleration/list/:page', 'graphs/acceleration/fees',
-  'wallet/:wallet', 'treasuries', 'stratum', 'graphs/price', 'graphs/mining/block-health']) {
+  'wallet/:wallet', 'treasuries', 'stratum', 'graphs/mining/block-health']) {
   assert.equal(disabledPaths.includes(forbidden), false, forbidden + ' is reachable while unconfigured');
   assert.equal(configuredPaths.includes(forbidden), true, forbidden + ' must retain its explicit configuration gate');
 }
 for (const retained of ['tx', 'block', 'address/:id', 'rbf', 'blocks/:page', 'mining', 'graphs/mining/block-fees',
-  'graphs/mining/block-fees-subsidy', 'graphs/mining/block-rewards', 'tools/calculator']) {
+  'graphs/mining/block-fees-subsidy', 'graphs/mining/block-rewards', 'graphs/price', 'tools/calculator']) {
   assert.equal(disabledPaths.includes(retained), true, retained + ' must remain functional');
 }
 const source = ts.createSourceFile('config.ts', fs.readFileSync(path.join(root, 'backend/src/config.ts'), 'utf8'), ts.ScriptTarget.ES2022, true);
@@ -117,11 +119,43 @@ for (const [height, before, after] of [[530000,512,256], [1042400,256,128], [157
 }
 assert.equal(emission.getNextHalvingHeight(105120001), -1);
 assert.equal(emission.getSubsidyAfterHalving(105120001), 0);
+const throughput = evaluate('frontend/src/app/shared/nito-throughput.ts');
+assert.equal(throughput.NITO_TARGET_BLOCK_INTERVAL_SECONDS, 60);
+assert.equal(throughput.getNitoVBytesPerSecondLimit(800000), 10000 / 3);
+const incomingGraph = fs.readFileSync(path.join(root, 'frontend/src/app/components/incoming-transactions-graph/incoming-transactions-graph.component.ts'), 'utf8');
+assert.equal(incomingGraph.includes('Math.max(1800'), false);
+assert.equal(incomingGraph.includes('yAxis: 1667'), false);
+assert.ok(incomingGraph.includes('getNitoVBytesPerSecondLimit'));
 
 const constantsSource = fs.readFileSync(path.join(root, 'frontend/src/app/app.constants.ts'), 'utf8');
 assert.equal(constantsSource.includes('Genesis of Bitcoin'), false);
 assert.equal(constantsSource.includes("Bitcoin's 1st Halving"), false);
 assert.ok(constantsSource.includes('export const specialBlocks'));
+const qualifiedLanguageBlock = /export const languages: Language\[\] = \[([\s\S]*?)\];/.exec(constantsSource)[1];
+const qualifiedLanguages = [...qualifiedLanguageBlock.matchAll(/\{ code: '([^']+)', name: '([^']+)' \},/g)].map(match => match[1]);
+assert.deepEqual(qualifiedLanguages, ['en', 'fr']);
+const angularConfig = JSON.parse(fs.readFileSync(path.join(root, 'frontend/angular.json'), 'utf8'));
+assert.deepEqual(angularConfig.projects.mempool.architect.build.configurations.public.localize, ['en-US', 'fr']);
+assert.equal(angularConfig.projects.mempool.architect.build.configurations.public.i18nMissingTranslation, 'warning');
+const footerTemplate = fs.readFileSync(path.join(root, 'frontend/src/app/shared/components/global-footer/global-footer.component.html'), 'utf8');
+assert.ok(footerTemplate.includes('<app-language-selector></app-language-selector>'));
+const publicBuild = JSON.parse(fs.readFileSync(path.join(root, 'frontend/package.json'), 'utf8')).scripts['build:public'];
+assert.ok(publicBuild.includes('--configuration production,public'));
+const publicNginx = fs.readFileSync(path.join(root, 'docker/nginx/nito-explorer.conf'), 'utf8');
+assert.ok(publicNginx.includes('location ^~ /fr/'));
+assert.ok(publicNginx.includes('try_files $uri $uri/ /fr/index.html'));
+
+const compose = fs.readFileSync(path.join(root, 'docker-compose.yml'), 'utf8');
+assert.ok(compose.includes('FIAT_PRICE_ENABLED: "${FIAT_PRICE_ENABLED:-true}"'));
+const coinpaprikaFeed = fs.readFileSync(path.join(root, 'backend/src/tasks/price-feeds/coinpaprika-api.ts'), 'utf8');
+assert.ok(coinpaprikaFeed.includes('nito-nito-coin'));
+assert.equal(coinpaprikaFeed.includes('/btc-bitcoin'), false);
+assert.equal(coinpaprikaFeed.includes('usd * 0.92'), false);
+assert.equal(coinpaprikaFeed.includes('usd * 1.36'), false);
+const fiatSelector = fs.readFileSync(path.join(root, 'frontend/src/app/components/fiat-selector/fiat-selector.component.ts'), 'utf8');
+assert.ok(fiatSelector.includes("currency[0] === 'USD'"));
+const statePreferences = fs.readFileSync(path.join(root, 'frontend/src/app/services/state.service.ts'), 'utf8');
+assert.ok(statePreferences.includes("fiatPreference === 'USD' ? fiatPreference : 'USD'"));
 
 const codeTemplate = fs.readFileSync(path.join(root, 'frontend/src/app/docs/code-template/code-template.component.html'), 'utf8');
 const codeTemplateComponent = fs.readFileSync(path.join(root, 'frontend/src/app/docs/code-template/code-template.component.ts'), 'utf8');
@@ -166,6 +200,8 @@ const dashboardTemplates = [
   'frontend/src/app/components/custom-dashboard/custom-dashboard.component.html',
   'frontend/src/app/components/acceleration/accelerator-dashboard/accelerator-dashboard.component.html',
 ].map(file => fs.readFileSync(path.join(root, file), 'utf8')).join('\n');
+assert.equal(dashboardTemplates.includes('Confirmed public accounting.'), false);
+assert.equal(dashboardTemplates.includes('Unconfirmed transactions excluded.'), false);
 for (const sourceText of [blockFilters, faqTemplate, faqData, dashboardTemplates]) {
   assert.equal(sourceText.includes('Nito Goggles'), false);
   assert.equal(sourceText.includes('Mempool Goggles'), false);

@@ -2,7 +2,7 @@
 
 This Angular application is the browser interface for Nito Mempool Explorer. It consumes the explorer's HTTP and WebSocket APIs; it does not connect to wallets or hold private keys.
 
-The public build currently ships the qualified English interface only. Translation source files inherited from upstream remain available for future review, but they are not part of the public Docker image until their Nito-specific terminology and responsive states are independently validated.
+The public build ships the independently qualified English and French interfaces. Translation source files inherited from upstream remain available for future review, but other locales are not part of the public Docker image until their Nito-specific terminology and responsive states are independently validated.
 
 ## Development
 
@@ -21,6 +21,7 @@ The development server expects the explorer backend described by the root [READM
 ```bash
 npm run test:money
 npm run test:features
+npm run test:locales
 npm run test:shared-cache
 npm run build:public
 ```

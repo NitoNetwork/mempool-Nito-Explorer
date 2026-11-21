@@ -15,8 +15,9 @@ class CoinpaprikaApi implements PriceFeed {
   public name: string = 'Coinpaprika';
   public currencies: string[] = ['USD', 'EUR', 'GBP', 'CAD', 'CHF', 'AUD', 'JPY'];
 
-  public url: string = 'https://api.coinpaprika.com/v1/tickers/nito-nito-coin?quotes=USD,EUR,GBP';
+  public url: string = 'https://api.coinpaprika.com/v1/tickers/nito-nito-coin?quotes=USD,EUR,GBP,CAD';
   public urlHist: string = 'https://api.coinpaprika.com/v1/tickers/nito-nito-coin/historical?start={START}&interval=1d';
+  private additionalQuotesUrl: string = 'https://api.coinpaprika.com/v1/tickers/nito-nito-coin?quotes=CHF,AUD,JPY';
 
   private cachedPrices: { [key: string]: number } = {};
   private cacheTime: number = 0;
@@ -32,21 +33,23 @@ class CoinpaprikaApi implements PriceFeed {
     }
 
     try {
-      const response = await query('https://api.coinpaprika.com/v1/tickers/nito-nito-coin?quotes=USD,EUR,GBP');
-      if (response && response['quotes']) {
-        for (const cur of Object.keys(response['quotes'])) {
-          this.cachedPrices[cur] = response['quotes'][cur]['price'];
+      const responses = await Promise.all([this.url, this.additionalQuotesUrl].map(async url => {
+        try {
+          return await query(url);
+        } catch {
+          return undefined;
         }
-        // Derive other currencies from USD using approximate rates
-        const usd = this.cachedPrices['USD'] || 0;
-        if (usd > 0) {
-          const rates: { [key: string]: number } = {
-            CAD: 1.36, CHF: 0.88, AUD: 1.53, JPY: 149.5
-          };
-          for (const [cur, rate] of Object.entries(rates)) {
-            this.cachedPrices[cur] = usd * rate;
+      }));
+      let updated = false;
+      for (const response of responses) {
+        if (response && response['quotes']) {
+          for (const cur of Object.keys(response['quotes'])) {
+            this.cachedPrices[cur] = response['quotes'][cur]['price'];
+            updated = true;
           }
         }
+      }
+      if (updated) {
         this.cacheTime = now;
       }
     } catch (e) {
@@ -72,16 +75,6 @@ class CoinpaprikaApi implements PriceFeed {
           priceHistory[timestamp] = getEmptyPricesObj();
         }
         priceHistory[timestamp]['USD'] = price.price;
-        // Derive other currencies from USD using approximate rates
-        const usd = price.price;
-        if (usd > 0) {
-          priceHistory[timestamp]['EUR'] = usd * 0.92;
-          priceHistory[timestamp]['GBP'] = usd * 0.79;
-          priceHistory[timestamp]['CAD'] = usd * 1.36;
-          priceHistory[timestamp]['CHF'] = usd * 0.88;
-          priceHistory[timestamp]['AUD'] = usd * 1.53;
-          priceHistory[timestamp]['JPY'] = usd * 149.5;
-        }
       }
     } catch (e) {}
     return priceHistory;

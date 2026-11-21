@@ -385,7 +385,8 @@ export class StateService {
     });
 
     const fiatPreference = this.storageService.getValue('fiat-preference');
-    this.fiatCurrency$ = new BehaviorSubject<string>(fiatPreference || 'USD');
+    const qualifiedFiatPreference = this.env.ADDITIONAL_CURRENCIES || fiatPreference === 'USD' ? fiatPreference : 'USD';
+    this.fiatCurrency$ = new BehaviorSubject<string>(qualifiedFiatPreference || 'USD');
 
     const rateUnitPreference = this.storageService.getValue('rate-unit-preference');
     this.rateUnits$ = new BehaviorSubject<string>(rateUnitPreference || 'vb');

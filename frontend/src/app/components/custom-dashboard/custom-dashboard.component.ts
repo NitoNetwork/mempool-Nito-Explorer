@@ -10,6 +10,7 @@ import { WebsocketService } from '@app/services/websocket.service';
 import { SeoService } from '@app/services/seo.service';
 import { ActiveFilter, FilterMode, GradientMode, toFlags } from '@app/shared/filters.utils';
 import { detectWebGL } from '@app/shared/graphs.utils';
+import { getNitoVBytesPerSecondLimit } from '@app/shared/nito-throughput';
 import { Address, AddressTxSummary } from '@interfaces/electrs.interface';
 import { ElectrsApiService } from '@app/services/electrs-api.service';
 
@@ -43,7 +44,7 @@ export class CustomDashboardComponent implements OnInit, OnDestroy, AfterViewIni
   mempoolBlocksData$: Observable<MempoolBlocksData>;
   mempoolInfoData$: Observable<MempoolInfoData>;
   mempoolLoadingStatus$: Observable<number>;
-  vBytesPerSecondLimit = 1667;
+  vBytesPerSecondLimit = 1;
   transactions$: Observable<TransactionStripped[]>;
   blocks$: Observable<BlockExtended[]>;
   replacements$: Observable<ReplacementInfo[]>;
@@ -93,6 +94,7 @@ export class CustomDashboardComponent implements OnInit, OnDestroy, AfterViewIni
     private seoService: SeoService,
     private cd: ChangeDetectorRef,
   ) {
+    this.vBytesPerSecondLimit = getNitoVBytesPerSecondLimit(this.stateService.env.BLOCK_WEIGHT_UNITS);
     this.webGlEnabled = this.stateService.isBrowser && detectWebGL();
     this.widgets = this.stateService.env.customize?.dashboard.widgets || [];
   }
@@ -166,10 +168,10 @@ export class CustomDashboardComponent implements OnInit, OnDestroy, AfterViewIni
         const percent = Math.round((Math.min(vbytesPerSecond, this.vBytesPerSecondLimit) / this.vBytesPerSecondLimit) * 100);
 
         let progressColor = 'bg-success';
-        if (vbytesPerSecond > 1667) {
+        if (vbytesPerSecond > this.vBytesPerSecondLimit) {
           progressColor = 'bg-warning';
         }
-        if (vbytesPerSecond > 3000) {
+        if (vbytesPerSecond > this.vBytesPerSecondLimit * 1.8) {
           progressColor = 'bg-danger';
         }
 

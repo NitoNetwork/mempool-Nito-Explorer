@@ -202,9 +202,9 @@ npm run build:public
 ```
 
 Serve the generated frontend with nginx or another static web server, and proxy `/api/v1/` and `/api/` to the backend.
-The public build ships English only. Translation source files remain available for
-future review but are not distributed until their Nito-specific copy and layouts
-have been independently qualified.
+The public build ships the independently qualified English and French interfaces.
+Other translation source files remain available for future review but are not
+distributed until their Nito-specific terminology and layouts are qualified.
 
 ## Development Checks
 
@@ -217,6 +217,7 @@ npm run build
 cd ../frontend
 npm run test:money
 npm run test:features
+npm run test:locales
 npm run test:shared-cache
 npm run build:public
 

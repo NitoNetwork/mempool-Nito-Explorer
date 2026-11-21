@@ -230,6 +230,13 @@
                   "maximumWarning": "6kb"
                 }
               ]
+            },
+            "public": {
+              "localize": [
+                "en-US",
+                "fr"
+              ],
+              "i18nMissingTranslation": "warning"
             }
           },
           "defaultConfiguration": ""

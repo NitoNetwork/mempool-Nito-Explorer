@@ -81,6 +81,11 @@ class WebsocketHandler {
 
   publishNitoPools(value: any | null): void {
     const projected = value === null ? null : publicNitoPools(value, nitoActivation.snapshot());
+    // A normal chain extension can expose the new activation tip before
+    // coinstatsindex has produced the matching accounting snapshot. Keep the
+    // last qualified public value until the new pair is ready. Explicit null
+    // remains the hard fence used for reorgs, expiry and provider outages.
+    if (value !== null && projected === null) { return; }
     const serialized = JSON.stringify(projected);
     if (this.socketData.nitoPools === serialized) { return; }
     // Keep null in init-data so reconnecting clients clear an obsolete snapshot.
@@ -97,7 +102,14 @@ class WebsocketHandler {
   publishNitoActivation(state: NitoActivationSnapshot): void {
     const serialized = JSON.stringify(state);
     const activationChanged = this.socketData.nitoActivation !== serialized;
-    const clearPools = state.status !== 'active' || activationChanged;
+    let previous: NitoActivationSnapshot | null = null;
+    try { previous = this.socketData.nitoActivation ? JSON.parse(this.socketData.nitoActivation) : null; }
+    catch { previous = null; }
+    const clearPools = state.status === 'unknown' || !!previous && previous.status !== 'unknown' && (
+      previous.chain !== state.chain ||
+      previous.privateTxActivationHeight !== state.privateTxActivationHeight ||
+      (previous.activated === true && state.activated !== true)
+    );
     if (!activationChanged && (!clearPools || this.socketData.nitoPools === 'null')) { return; }
     this.socketData.nitoActivation = serialized;
     // The activation lease can expire while the shared RPC collector is still
@@ -151,6 +163,13 @@ class WebsocketHandler {
     this.serializedInitData = '{'
     + Object.keys(this.socketData).map(key => `"${key}": ${this.socketData[key]}`).join(', ')
     + '}';
+  }
+
+  getNitoPoolsSnapshot(): any | null {
+    const value = this.socketData.nitoPools;
+    if (!value || value === 'null') { return null; }
+    try { return JSON.parse(value); }
+    catch { return null; }
   }
 
   private updateSocketData(): void {
@@ -1076,10 +1095,7 @@ class WebsocketHandler {
 
   /** @asyncUnsafe */
   async handleNewBlock(block: BlockExtended, txIds: string[], transactions: MempoolTransactionExtended[]): Promise<void> {
-    publicResponses.unavailable();
-    nitoActivation.invalidate('chain-changed');
-    nitoPools.invalidate();
-    this.publishNitoPools(null);
+    publicResponses.changingChain();
     if (!this.webSocketServers.length) {
       throw new Error('No WebSocket.Server have been set');
     }

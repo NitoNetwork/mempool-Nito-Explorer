@@ -2,9 +2,10 @@ import { Request, Response, NextFunction } from 'express';
 
 type Reply = { body: string; status: number; type: string };
 
-/** Bounded process-wide memoization. A generation change fences in-flight work. */
+/** Bounded process-wide memoization with soft refresh and hard failure fences. */
 export class SharedSnapshotCache<T> {
   private generation = 0;
+  private unsafeGeneration = 0;
   private entries = new Map<string, { value: T; expires: number; bytes: number }>();
   private pending = new Map<string, Promise<T>>();
   private bytes = 0;
@@ -13,9 +14,17 @@ export class SharedSnapshotCache<T> {
   constructor(private maxEntries = 256, private maxBytes = 16 * 1024 * 1024,
     private ttl = 4000, private size = (value: T) => Buffer.byteLength(JSON.stringify(value))) {}
 
-  invalidate(): void {
+  invalidate(refuseInFlight = true): void {
     this.generation++;
+    if (refuseInFlight) { this.unsafeGeneration = this.generation; }
     this.entries.clear(); this.pending.clear(); this.bytes = 0;
+  }
+
+  peek(key: string): T | undefined {
+    const entry = this.entries.get(key);
+    if (!entry) { return undefined; }
+    this.entries.delete(key); this.entries.set(key, entry); this.hits++;
+    return entry.value;
   }
 
   async get(key: string, load: () => Promise<T>, cacheable = (_value: T) => true): Promise<T> {
@@ -24,14 +33,21 @@ export class SharedSnapshotCache<T> {
       this.entries.delete(key); this.entries.set(key, entry); this.hits++;
       return entry.value;
     }
-    if (entry) { this.bytes -= entry.bytes; this.entries.delete(key); }
     const existing = this.pending.get(key);
     if (existing) { this.coalesced++; return existing; }
     const generation = this.generation;
     const work = Promise.resolve().then(load).then(value => {
-      if (generation !== this.generation) { throw new Error('Public chain snapshot changed; retry'); }
+      if (generation !== this.generation) {
+        // A completed public snapshot remains safe to return across a normal
+        // refresh, but must never be retained in the new generation. Reorgs
+        // and provider failures use a hard invalidation and reject it.
+        if (generation < this.unsafeGeneration) { throw new Error('Public chain snapshot changed; retry'); }
+        return value;
+      }
       const bytes = this.size(value);
       if (cacheable(value) && bytes <= this.maxBytes) {
+        const previous = this.entries.get(key);
+        if (previous) { this.bytes -= previous.bytes; this.entries.delete(key); }
         while (this.entries.size >= this.maxEntries || this.bytes + bytes > this.maxBytes) {
           const first = this.entries.keys().next().value;
           if (first === undefined) { break; }
@@ -53,21 +69,33 @@ class PublicResponses {
   private tip = '';
   private txids = new Set<string>();
   private healthy = false;
+  private chainChanging = false;
+  private liveChanging = false;
 
   observe(tip: string, txids: string[]): void {
-    if (!this.healthy || this.tip !== tip) { this.chain.invalidate(); this.live.invalidate(); }
-    else if (txids.length !== this.txids.size || txids.some(id => !this.txids.has(id))) { this.live.invalidate(); }
+    if (!this.healthy || this.tip !== tip) { this.chain.invalidate(false); this.live.invalidate(false); }
+    else if (txids.length !== this.txids.size || txids.some(id => !this.txids.has(id))) { this.live.invalidate(false); }
     this.tip = tip; this.txids = new Set(txids); this.healthy = !!tip;
+    this.chainChanging = false; this.liveChanging = false;
   }
 
   unavailable(): void {
-    this.healthy = false; this.chain.invalidate(); this.live.invalidate();
+    this.healthy = false; this.chainChanging = false; this.liveChanging = false;
+    this.chain.invalidate(); this.live.invalidate();
   }
 
   changingMempool(txids: string[]): void {
-    if (txids.length !== this.txids.size || txids.some(id => !this.txids.has(id))) {
-      this.unavailable();
-    }
+    // Keep the last completed shared snapshot readable while the in-memory
+    // mempool is updated. observe() softly invalidates live responses after
+    // the new set is complete.
+    if (txids.length !== this.txids.size || txids.some(id => !this.txids.has(id))) { this.liveChanging = true; }
+  }
+
+  changingChain(): void {
+    // A normal new block is stale-while-refresh, not an outage. The last
+    // completed public snapshot stays readable until observe() atomically
+    // moves the cache to the new tip. Reorgs still call unavailable().
+    this.chainChanging = true; this.liveChanging = true;
   }
 
   middleware = (req: Request, res: Response, next: NextFunction): void => {
@@ -86,6 +114,14 @@ class PublicResponses {
     }
     const send = res.send.bind(res);
     const cache = block || mining ? this.chain : this.live;
+    const changing = block || mining ? this.chainChanging : this.liveChanging;
+    if (changing) {
+      const stale = cache.peek(req.path);
+      if (stale) {
+        res.status(stale.status).type(stale.type).setHeader('Cache-Control', 'no-store');
+        send(stale.body); return;
+      }
+    }
     cache.get(req.path, () => new Promise<Reply>((resolve, reject) => {
       let done = false;
       const timer = setTimeout(() => { done = true; reject(new Error('Public request timed out')); }, 30000);

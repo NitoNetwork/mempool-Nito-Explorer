@@ -183,11 +183,13 @@ This reduces repeated work; a cold or uncached address still requires indexing
 and RPC reads and is not guaranteed to load instantly.
 
 Core outages clear live projections, fees and pool snapshots and expose an
-unavailable state. Price feeds, Lightning, acceleration, external wallet services,
-Stratum, historical CPFP indexing and audits are not qualified Nito services.
-Keep their options disabled. Do not enable inherited Bitcoin price feeds for
-NITO. Missing fiat data is unavailable, not zero. Mining and supply views use
-Nito's actual data and confirmed pool accounting, not Bitcoin's emission curve.
+unavailable state. Lightning, acceleration, external wallet services, Stratum,
+historical CPFP indexing and audits are not qualified Nito services. Keep their
+options disabled. The public profile qualifies only direct Coinpaprika NITO/USD
+current and historical prices; inherited Bitcoin prices and estimated FX values
+remain disabled. Missing fiat data is unavailable, not zero. Mining and supply
+views use Nito's actual data and confirmed pool accounting, not Bitcoin's emission
+curve.
 
 ## Networks
 

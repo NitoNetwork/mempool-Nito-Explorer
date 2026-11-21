@@ -35,7 +35,7 @@ The delivered stack is checked with its real Compose definitions, TLS HTTP/WebSo
 - Default Signet does not have a supplied signed history for a full end-to-end qualification.
 - Pure Orchard replacement relationships cannot be inferred without public mempool nullifier relationships. The UI does not invent them.
 - A short controlled workload is not sustained production-load certification.
-- External clients, price feeds, Lightning, acceleration, Stratum, account services, and inherited block-audit/CPFP services are outside this baseline and stay disabled unless separately qualified.
+- External clients, Lightning, acceleration, Stratum, account services, and inherited block-audit/CPFP services are outside this baseline and stay disabled unless separately qualified. The direct Coinpaprika NITO/USD current and historical price feed is qualified; estimated or inherited Bitcoin/FX prices remain disabled.
 - A public operator must still validate its own TLS, backups, resource limits, monitoring, network exposure, data-retention policy, and rollback procedure.
 
 ## Required pre-publication checks
@@ -44,7 +44,7 @@ Before publishing a changed explorer snapshot:
 
 1. verify the pinned ElectrumX import;
 2. run affected backend, SQL, frontend, and browser tests;
-3. build the English public frontend and the delivered containers;
+3. build the qualified English/French public frontend and the delivered containers;
 4. scan the final Git tree for credentials, keys, wallet/node data, private evidence, generated artifacts, and stale private repository links;
 5. verify documentation links and strict UTF-8 decoding;
 6. record the exact Core, ElectrumX, explorer, image, and artifact hashes used by the final checks.
