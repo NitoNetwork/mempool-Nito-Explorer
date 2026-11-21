@@ -28,6 +28,7 @@ import nitoPools from '../nito-pools-instance';
 import { safeNitoshi } from '../nito-values';
 import nitoActivation from '../nito-activation-instance';
 import { PRIVATE_ADDRESS_ERROR } from '../nito-errors';
+import { publicNitoPools } from '../nito-public-pools';
 
 
 const TXID_REGEX = /^[a-f0-9]{64}$/i;
@@ -53,7 +54,11 @@ class BitcoinRoutes {
       })
       .get(config.MEMPOOL.API_URL_PREFIX + 'nito/pools', async (_req, res) => {
         res.setHeader('Cache-Control', 'no-store');
-        try { res.json(nitoPools.snapshot()); }
+        try {
+          const value = publicNitoPools(nitoPools.snapshot(), nitoActivation.snapshot());
+          if (!value) { throw new Error('Public pool snapshot unavailable'); }
+          res.json(value);
+        }
         catch (e) { res.status(503).json({ status: 'unavailable', error: e instanceof Error ? e.message : 'Pool accounting unavailable' }); }
       })
       .get(config.MEMPOOL.API_URL_PREFIX + 'nito/activation', (_req, res) => {

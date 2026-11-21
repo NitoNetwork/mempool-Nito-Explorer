@@ -310,9 +310,10 @@ socket.initRbfSummary().then(async () => {
     return fixture;
   };
   const poolTemplate = template('dashboard/dashboard.component.html').match(/<section[\s\S]*?<\/section>/)[0];
-  const poolFixture = render(poolTemplate, { stateService: socket.stateService, nitoPools$: require('rxjs').of({
-    transparent: { chainValue: '1284565890.00000000' }, orchard: { chainValue: '0.00000000' },
-    total: { chainValue: '1284565890.00000000' }, blocks: 100, chain: 'regtest' }) });
+  const inactivePublicPools = { transparent: { chainValue: '1284565890.00000000' },
+    total: { chainValue: '1284565890.00000000' }, blocks: 100, chain: 'regtest' };
+  const publicPools$ = new BehaviorSubject(inactivePublicPools);
+  const poolFixture = render(poolTemplate, { stateService: socket.stateService, nitoPools$: publicPools$ });
   const { TxFeaturesComponent } = load('src/app/components/tx-features/tx-features.component.ts');
   socket.stateService.network = 'regtest';
   const features = new TxFeaturesComponent(socket.stateService);
@@ -359,8 +360,10 @@ socket.initRbfSummary().then(async () => {
   };
   assertRendered(false);
   socket.handleResponse({ nitoActivation: coreActive });
+  publicPools$.next({ ...inactivePublicPools, orchard: { chainValue: '0.00000000' } });
   assertRendered(true);
   tips.next([{ id: 'cd'.repeat(32), height: 99 }]);
+  publicPools$.next(inactivePublicPools);
   assertRendered(false);
   socket.handleResponse({ nitoActivation: { ...coreActive, status: 'inactive', activated: false, blocks: 99, bestblockhash: 'cd'.repeat(32) } });
   assertRendered(false);

@@ -42,6 +42,7 @@ import publicResponses from './shared-response-cache';
 import nitoPools from './nito-pools-instance';
 import nitoActivation from './nito-activation-instance';
 import { NitoActivationSnapshot } from './nito-activation';
+import { publicNitoPools } from './nito-public-pools';
 
 // valid 'want' subscriptions
 const wantable = [
@@ -79,7 +80,8 @@ class WebsocketHandler {
   }
 
   publishNitoPools(value: any | null): void {
-    const serialized = JSON.stringify(value);
+    const projected = value === null ? null : publicNitoPools(value, nitoActivation.snapshot());
+    const serialized = JSON.stringify(projected);
     if (this.socketData.nitoPools === serialized) { return; }
     // Keep null in init-data so reconnecting clients clear an obsolete snapshot.
     this.socketData.nitoPools = serialized;
@@ -94,8 +96,9 @@ class WebsocketHandler {
 
   publishNitoActivation(state: NitoActivationSnapshot): void {
     const serialized = JSON.stringify(state);
-    const clearPools = state.status === 'unknown';
-    if (this.socketData.nitoActivation === serialized && (!clearPools || this.socketData.nitoPools === 'null')) { return; }
+    const activationChanged = this.socketData.nitoActivation !== serialized;
+    const clearPools = state.status !== 'active' || activationChanged;
+    if (!activationChanged && (!clearPools || this.socketData.nitoPools === 'null')) { return; }
     this.socketData.nitoActivation = serialized;
     // The activation lease can expire while the shared RPC collector is still
     // awaiting its deadline. Clear dependent pool data in the same packet.

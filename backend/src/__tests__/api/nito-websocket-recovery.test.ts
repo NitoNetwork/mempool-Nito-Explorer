@@ -8,6 +8,15 @@ describe('Nito WebSocket recovery snapshots', () => {
     chain: null, blocks: null, bestblockhash: null, source: 'core', reason: 'core-unavailable' };
   const active = { status: 'active', activated: true, privateTxActivationHeight: 110,
     chain: 'regtest', blocks: 110, bestblockhash: 'ab'.repeat(32), source: 'core' };
+  const inactive = { ...active, status: 'inactive', activated: false };
+  const poolSnapshot = (activation = active) => ({
+    status: 'confirmed', source: 'core', includes_mempool: false,
+    activated: activation.activated, privateTxActivationHeight: activation.privateTxActivationHeight,
+    chain: activation.chain, blocks: activation.blocks, bestblockhash: activation.bestblockhash,
+    transparent: { monitored: true, chainValueNitoshi: '9007199254740993', chainValue: '90071992.54740993' },
+    orchard: { monitored: true, chainValueNitoshi: '1', chainValue: '0.00000001' },
+    total: { monitored: true, chainValueNitoshi: '9007199254740994', chainValue: '90071992.54740994' },
+  });
 
   beforeEach(() => {
     jest.resetModules(); state = unknown; messages = [];
@@ -37,8 +46,7 @@ describe('Nito WebSocket recovery snapshots', () => {
   test('replays live data computed before recovery in the same packet as available=true', () => {
     handler.publishNitoStatus(false);
     state = active; publishActivation(state);
-    const pools = { activated: true, bestblockhash: active.bestblockhash,
-      transparent: '9007199254740993', orchard: '128456589000000000' };
+    const pools = poolSnapshot();
     const fees = { fastestFee: 1, halfHourFee: 1, hourFee: 1, economyFee: 1, minimumFee: 1 };
     const projected = [{ blockSize: 100, blockVSize: 100, nTx: 1, totalFees: '9007199254740993' }];
     handler.publishNitoPools(pools);
@@ -50,7 +58,7 @@ describe('Nito WebSocket recovery snapshots', () => {
     expect(messages[messages.length - 1]).toEqual({ nitoStatus: { available: true },
       nitoActivation: active, nitoPools: pools, fees, 'mempool-blocks': projected });
     expect(JSON.parse(handler.getSerializedInitData())).toMatchObject(messages[messages.length - 1]);
-    expect(activation.snapshot).toHaveBeenCalledTimes(1);
+    expect(activation.snapshot).toHaveBeenCalledTimes(2);
     const count = messages.length;
     handler.publishNitoStatus(true);
     expect(messages).toHaveLength(count);
@@ -65,6 +73,20 @@ describe('Nito WebSocket recovery snapshots', () => {
     expect(messages[messages.length - 1]).toEqual({ nitoStatus: { available: true },
       nitoActivation: state, nitoPools: null, fees: null, 'mempool-blocks': [] });
     expect(JSON.parse(handler.getSerializedInitData()).nitoActivation).toEqual(state);
+  });
+
+  test('never publishes Orchard accounting before activation and adds it once active', () => {
+    state = inactive; publishActivation(state);
+    handler.publishNitoPools(poolSnapshot(inactive));
+    const inactiveMessage = messages[messages.length - 1];
+    expect(inactiveMessage.nitoPools).not.toHaveProperty('orchard');
+    expect(JSON.stringify(inactiveMessage)).not.toMatch(/orchard/i);
+    expect(JSON.stringify(JSON.parse(handler.getSerializedInitData()).nitoPools)).not.toMatch(/orchard/i);
+
+    state = active; publishActivation(state);
+    handler.publishNitoPools(poolSnapshot(active));
+    expect(messages[messages.length - 1].nitoPools.orchard.chainValueNitoshi).toBe('1');
+    expect(JSON.parse(handler.getSerializedInitData()).nitoPools.orchard.chainValueNitoshi).toBe('1');
   });
 
   test('lease expiry clears both connected clients and reconnect data while the next RPC is pending', async () => {
@@ -82,8 +104,7 @@ describe('Nito WebSocket recovery snapshots', () => {
     try {
       state = await service.refresh();
       handler.publishNitoStatus(true);
-      handler.publishNitoPools({ activated: true, bestblockhash: active.bestblockhash,
-        transparent: '9007199254740993', orchard: '128456589000000000' });
+      handler.publishNitoPools(poolSnapshot());
       rpc.getBlockchainInfo.mockReturnValueOnce(new Promise(resolve => { finish = resolve; }));
       const pending = service.refresh();
       jest.advanceTimersByTime(30000);
