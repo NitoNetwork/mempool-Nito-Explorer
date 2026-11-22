@@ -309,22 +309,22 @@ class BitcoindElectrsApi extends BitcoinApi implements AbstractBitcoinApi {
     } catch (error: any) {
       const message = String(error?.message || error).toLowerCase();
       if (message.includes('unknown method') || message.includes('method not found')) {
-        if (cursor !== null) {
-          throw new IndexUnavailableError('Electrum pagination support is required for this address history', false);
-        }
         const history = await this.electrumClient.request(
           'blockchain.scripthash.get_history', [scripthash]);
         const isConfirmed = (entry: any): boolean => Number(entry?.height) > 0
           || (Number(entry?.height) === 0 && entry?.fee === undefined);
-        if (!Array.isArray(history) || !history.every(entry => this.validHistoryEntry(entry, isConfirmed(entry)))) {
+        const normalized = Array.isArray(history) ? history.map((entry, index) =>
+          isConfirmed(entry) ? { ...entry, cursor: index } : entry) : [];
+        if (!Array.isArray(history) || !normalized.every(entry => this.validHistoryEntry(entry, isConfirmed(entry)))) {
           throw new IndexUnavailableError('Electrum returned an invalid address history', false);
         }
-        const confirmed = history.filter(isConfirmed).reverse();
-        const unconfirmed = history.filter(entry => !isConfirmed(entry));
-        if (confirmed.length > limit) {
-          throw new IndexUnavailableError('Electrum pagination support is required for this large address history', false);
-        }
-        return { confirmed, unconfirmed, has_more: false, cursor: null, total: confirmed.length };
+        const confirmed = normalized.filter(isConfirmed).reverse();
+        const remaining = cursor === null ? confirmed : confirmed.filter(entry => entry.cursor! < cursor);
+        const page = remaining.slice(0, limit);
+        const has_more = remaining.length > page.length;
+        const unconfirmed = cursor === null ? normalized.filter(entry => !isConfirmed(entry)) : [];
+        return { confirmed: page, unconfirmed, has_more,
+          cursor: has_more ? page[page.length - 1].cursor! : null, total: confirmed.length };
       }
       throw error;
     }
