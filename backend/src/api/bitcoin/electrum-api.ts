@@ -374,6 +374,7 @@ class BitcoindElectrsApi extends BitcoinApi implements AbstractBitcoinApi {
     }
   }
 
+  /** @asyncUnsafe Persists the continuation page in SQL. */
   private async completedRecentHistory(
     scripthash: string, entries: IElectrumApi.ScriptHashHistory[], tip: IndexTip, total: number
   ): Promise<IElectrumApi.ScriptHashHistory[]> {

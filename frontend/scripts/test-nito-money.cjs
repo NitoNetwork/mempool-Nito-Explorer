@@ -317,7 +317,7 @@ socket.initRbfSummary().then(async () => {
     total: { chainValue: '1284565890.00000000' }, blocks: 100, chain: 'regtest' };
   const publicPools$ = new BehaviorSubject(inactivePublicPools);
   const poolFixture = render(poolTemplate, { stateService: socket.stateService, nitoPools$: publicPools$ });
-  assert.match(poolFixture.nativeElement.querySelector('.nito-price-link')?.textContent || '', /Current NITO\/USD/);
+  assert.match(poolFixture.nativeElement.querySelector('.nito-price-link')?.textContent || '', /Current NITO\/Price history/);
   const { TxFeaturesComponent } = load('src/app/components/tx-features/tx-features.component.ts');
   socket.stateService.network = 'regtest';
   const features = new TxFeaturesComponent(socket.stateService);
