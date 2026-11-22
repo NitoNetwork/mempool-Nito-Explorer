@@ -309,7 +309,20 @@ class BitcoindElectrsApi extends BitcoinApi implements AbstractBitcoinApi {
     } catch (error: any) {
       const message = String(error?.message || error).toLowerCase();
       if (message.includes('unknown method') || message.includes('method not found')) {
-        throw new IndexUnavailableError('Electrum pagination support is required for exact address history', false);
+        if (cursor !== null) {
+          throw new IndexUnavailableError('Electrum pagination support is required for this address history', false);
+        }
+        const history = await this.electrumClient.request(
+          'blockchain.scripthash.get_history', [scripthash]);
+        if (!Array.isArray(history) || !history.every(entry => this.validHistoryEntry(entry, Number(entry?.height) > 0))) {
+          throw new IndexUnavailableError('Electrum returned an invalid address history', false);
+        }
+        const confirmed = history.filter(entry => Number(entry.height) > 0).reverse();
+        const unconfirmed = history.filter(entry => Number(entry.height) <= 0);
+        if (confirmed.length > limit) {
+          throw new IndexUnavailableError('Electrum pagination support is required for this large address history', false);
+        }
+        return { confirmed, unconfirmed, has_more: false, cursor: null, total: confirmed.length };
       }
       throw error;
     }
