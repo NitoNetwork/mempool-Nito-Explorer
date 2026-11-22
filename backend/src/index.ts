@@ -285,13 +285,18 @@ class Server {
         }
       }
       const pollRate = config.MEMPOOL.POLL_RATE_MS * (indexer.indexerIsRunning() ? 10 : 1);
+      // A successful Core/Electrum update is enough to make completed mining
+      // snapshots available again. Do not wait for a poll with zero handled
+      // blocks: on a fast chain, continuous block processing could otherwise
+      // leave every mining endpoint suspended after a transient startup error.
+      const miningCacheRecovered = miningResponseCache.resume();
       if (numHandledBlocks === 0) {
         publicResponses.changingMempool(newMempool);
         await memPool.$updateMempool(newMempool, latestAccelerations, minFeeMempool, minFeeTip, pollRate);
         const observedTip = blocks.getBlocks().slice(-1)[0]?.id || '';
         publicResponses.observe(observedTip, newMempool);
         const miningTipChanged = miningResponseCache.observeTip(observedTip);
-        if (miningResponseCache.resume() || miningTipChanged) {
+        if (miningCacheRecovered || miningTipChanged) {
           miningRoutes.refreshCachePrewarm();
         }
         miningRoutes.startCachePrewarm();
