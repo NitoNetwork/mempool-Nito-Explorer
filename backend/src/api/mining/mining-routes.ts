@@ -220,6 +220,7 @@ class MiningRoutes {
         res.json(pools);
       }
     } catch (e) {
+      logger.err(`Failed to get pools stats: ${e instanceof Error ? e.stack || e.message : e}`);
       handleError(req, res, 500, 'Failed to get pools');
     }
   }
@@ -237,6 +238,7 @@ class MiningRoutes {
       res.setHeader('Expires', new Date(Date.now() + 1000 * 60).toUTCString());
       res.json(stats);
     } catch (e) {
+      logger.err(`Failed to get pools aggregate: ${e instanceof Error ? e.stack || e.message : e}`);
       handleError(req, res, 500, 'Failed to get pools');
     }
   }
