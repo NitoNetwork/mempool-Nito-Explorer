@@ -115,21 +115,49 @@ class Mining {
     interval = interval || '4w';
     const poolsStatistics = {};
 
-    const poolsInfo: PoolInfo[] = await PoolsRepository.$getPoolsInfo(interval);
+    const rawPoolsInfo: PoolInfo[] = await PoolsRepository.$getPoolsInfo(interval);
     const emptyBlocks: any[] = await BlocksRepository.$countEmptyBlocks(null, interval);
+
+    // Dynamic coinbase identities may use several database rows over time. The
+    // public mining view represents a displayed pool name once and keeps the
+    // most recently active row as its link target.
+    const groupedPools = new Map<string, PoolInfo[]>();
+    for (const pool of rawPoolsInfo) {
+      const key = pool.name.trim().toLocaleLowerCase('en-US');
+      groupedPools.set(key, [...(groupedPools.get(key) || []), pool]);
+    }
+    const poolsInfo: Array<PoolInfo & { sourcePoolIds: number[] }> = Array.from(groupedPools.values()).map(group => {
+      const representative = group.reduce((latest, pool) =>
+        (pool.lastBlockHeight || 0) > (latest.lastBlockHeight || 0) ? pool : latest
+      );
+      const blockCount = group.reduce((total, pool) => total + Number(pool.blockCount), 0);
+      const weightedAverage = (field: 'avgMatchRate' | 'avgFeeDelta'): number | null => {
+        const values = group.filter(pool => pool[field] !== null);
+        if (!values.length || !blockCount) { return null; }
+        return values.reduce((total, pool) => total + Number(pool[field]) * Number(pool.blockCount), 0) /
+          values.reduce((total, pool) => total + Number(pool.blockCount), 0);
+      };
+      return {
+        ...representative,
+        blockCount,
+        avgMatchRate: weightedAverage('avgMatchRate'),
+        avgFeeDelta: weightedAverage('avgFeeDelta'),
+        sourcePoolIds: group.map(pool => pool.poolId),
+      };
+    }).sort((a, b) => b.blockCount - a.blockCount);
 
     const poolsStats: PoolStats[] = [];
     let rank = 1;
 
-    poolsInfo.forEach((poolInfo: PoolInfo) => {
-      const emptyBlocksCount = emptyBlocks.filter((emptyCount) => emptyCount.poolId === poolInfo.poolId);
+    poolsInfo.forEach((poolInfo) => {
+      const emptyBlocksCount = emptyBlocks.filter((emptyCount) => poolInfo.sourcePoolIds.includes(emptyCount.poolId));
       const poolStat: PoolStats = {
         poolId: poolInfo.poolId, // mysql row id
         name: poolInfo.name,
         link: poolInfo.link,
         blockCount: poolInfo.blockCount,
         rank: rank++,
-        emptyBlocks: emptyBlocksCount.length > 0 ? emptyBlocksCount[0]['count'] : 0,
+        emptyBlocks: emptyBlocksCount.reduce((total, row) => total + Number(row['count']), 0),
         slug: poolInfo.slug,
         avgMatchRate: poolInfo.avgMatchRate !== null ? Math.round(100 * poolInfo.avgMatchRate) / 100 : null,
         avgFeeDelta: poolInfo.avgFeeDelta,

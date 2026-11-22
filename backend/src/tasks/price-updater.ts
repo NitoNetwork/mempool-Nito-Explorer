@@ -403,8 +403,9 @@ class PriceUpdater {
         }
         prices[currency] = getMedian(grouped[time][currency]);
       }
-      await PricesRepository.$savePrices(parseInt(time, 10), prices);
-      ++totalInserted;
+      if (await PricesRepository.$savePrices(parseInt(time, 10), prices)) {
+        ++totalInserted;
+      }
     }
 
     if (totalInserted > 0) {

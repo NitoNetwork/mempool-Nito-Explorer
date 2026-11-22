@@ -1,5 +1,6 @@
 import DB from '../database';
 import { setupTestDatabase, waitForDatabase } from './test-helpers';
+import databaseMigration from '../api/database-migration';
 
 describe('Database Migration Integration Tests', () => {
   beforeAll(async () => {
@@ -93,5 +94,69 @@ describe('Database Migration Integration Tests', () => {
     expect(columnNames).toContain('name');
     expect(columnNames).toContain('slug');
   });
+
+  test('clean install creates exact address cache tables', async () => {
+    const [tables] = await DB.query<any>(
+      `SELECT TABLE_NAME FROM information_schema.tables
+       WHERE table_schema = 'mempool_test'
+       AND TABLE_NAME IN ('address_stats_cache', 'address_history_cursors')`
+    );
+    expect(tables.map((row: any) => row.TABLE_NAME).sort()).toEqual([
+      'address_history_cursors', 'address_stats_cache',
+    ]);
+
+    const [columns] = await DB.query<any>(
+      `SELECT TABLE_NAME, COLUMN_NAME FROM information_schema.columns
+       WHERE table_schema = 'mempool_test'
+       AND TABLE_NAME IN ('address_stats_cache', 'address_history_cursors')`
+    );
+    const names = new Set(columns.map((row: any) => `${row.TABLE_NAME}.${row.COLUMN_NAME}`));
+    for (const name of ['scripthash', 'fingerprint', 'tip_hash', 'tip_height', 'chain_stats', 'mempool_stats', 'updated_at']) {
+      expect(names).toContain(`address_stats_cache.${name}`);
+    }
+    for (const name of ['scripthash', 'txid', 'tx_num', 'tip_hash', 'tip_height', 'updated_at']) {
+      expect(names).toContain(`address_history_cursors.${name}`);
+    }
+  });
+
+  test('migrates an isolated schema 110 copy to additive schema 112', async () => {
+    await DB.query('DROP TABLE IF EXISTS address_history_cursors');
+    await DB.query('DROP TABLE IF EXISTS address_stats_cache');
+    await DB.query(`UPDATE state SET number = 110 WHERE name = 'schema_version'`);
+
+    await databaseMigration.$initializeOrMigrateDatabase();
+
+    const [version] = await DB.query<any>(`SELECT number FROM state WHERE name = 'schema_version'`);
+    expect(Number(version[0].number)).toBe(112);
+    const [tables] = await DB.query<any>(
+      `SELECT TABLE_NAME FROM information_schema.tables
+       WHERE table_schema = 'mempool_test'
+       AND TABLE_NAME IN ('address_stats_cache', 'address_history_cursors')`
+    );
+    expect(tables).toHaveLength(2);
+  }, 120000);
+
+  test('migrates an existing schema 111 cache to schema 112', async () => {
+    await DB.query('DROP TABLE IF EXISTS address_history_cursors');
+    await DB.query('ALTER TABLE address_stats_cache DROP COLUMN IF EXISTS tip_hash');
+    await DB.query('ALTER TABLE address_stats_cache DROP COLUMN IF EXISTS tip_height');
+    await DB.query(`UPDATE state SET number = 111 WHERE name = 'schema_version'`);
+
+    await databaseMigration.$initializeOrMigrateDatabase();
+
+    const [version] = await DB.query<any>(`SELECT number FROM state WHERE name = 'schema_version'`);
+    expect(Number(version[0].number)).toBe(112);
+    const [columns] = await DB.query<any>(
+      `SELECT COLUMN_NAME FROM information_schema.columns
+       WHERE table_schema = 'mempool_test' AND table_name = 'address_stats_cache'
+       AND COLUMN_NAME IN ('tip_hash', 'tip_height')`
+    );
+    expect(columns).toHaveLength(2);
+    const [cursorTable] = await DB.query<any>(
+      `SELECT TABLE_NAME FROM information_schema.tables
+       WHERE table_schema = 'mempool_test' AND TABLE_NAME = 'address_history_cursors'`
+    );
+    expect(cursorTable).toHaveLength(1);
+  }, 120000);
 });
 

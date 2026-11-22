@@ -41,6 +41,9 @@ import { getBlockFirstSeenFromLogs, getOldestLogTimestampFromLogs, scanLogsForBl
 import { calculateStaleBlockStats } from './nito-stale-block-stats';
 import { reconstructBlockAmounts } from '../repositories/nito-block-amounts';
 
+const TRUSTED_POOL_DOMAIN = /\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}\b/i;
+const TRUSTED_POOL_MARKER = /\b(?:NitroPool|NitoPool|zpool|ckpool|Miningcore|Mining4People|koinium|yiimp)\b/i;
+
 class Blocks {
   private blocks: BlockExtended[] = [];
   private blockSummaries: BlockSummary[] = [];
@@ -466,34 +469,23 @@ class Blocks {
         }
       }
       const fragments = raw.split(/\|+/).map(s => s.trim()).filter(s => s.length > 2);
-      let best = '';
+
+      // A domain is stable enough to identify a pool even when the surrounding
+      // coinbase text changes between blocks.
       for (const frag of fragments) {
-        const cleaned = frag.replace(/^[^a-zA-Z]+/, '');
-        if (cleaned.length > best.length) {
-          best = cleaned;
-        }
-      }
-      const knownPatterns = ['Mined with', 'Mined by', 'ckpool', 'minto.day', 'Miningcore', 'zpool', 'NitroPool', 'Mining4People', 'koinium', 'Epstein', 'pool', 'Pool', 'solo', 'Solo'];
-      for (const frag of fragments) {
-        for (const pattern of knownPatterns) {
-          const idx = frag.indexOf(pattern);
-          if (idx !== -1) {
-            const extracted = frag.substring(idx).trim();
-            if (extracted.length > best.length) {
-              best = extracted;
-            }
-          }
-        }
-      }
-      if (best.length > 2) {
-        let minerName = best.replace(/[^a-zA-Z0-9\s.()/!-]+$/g, '').trim();
-        // Keep the stable domain even when pool software adds noisy prefixes/suffixes.
-        const domainMatch = minerName.match(/([a-zA-Z0-9-]+\.[a-zA-Z]{2,})/);
+        const domainMatch = frag.match(TRUSTED_POOL_DOMAIN);
         if (domainMatch) {
-          minerName = domainMatch[1];
+          return domainMatch[0];
         }
-        if (minerName.length >= 3) {
-          return minerName;
+      }
+
+      // Only explicit, known pool/software markers may become an aggregated
+      // pool identity. Arbitrary printable coinbase messages remain available
+      // in coinbaseSignatureAscii, but must never rename or create a pool.
+      for (const frag of fragments) {
+        const markerMatch = frag.match(TRUSTED_POOL_MARKER);
+        if (markerMatch) {
+          return markerMatch[0];
         }
       }
       return null;
@@ -599,11 +591,26 @@ class Blocks {
       const existingPool = await poolsRepository.$getPoolByAddress(poolAddress);
 
       if (existingPool) {
-        if (minerName && existingPool.name !== minerName) {
+        const isDynamicPool = existingPool.link === '' && existingPool.slug?.endsWith(`_${addrSuffix}`);
+
+        if (minerName && isDynamicPool && existingPool.name !== minerName) {
           const updated = await poolsRepository.$updatePoolNameIfNewer(existingPool.id, minerName, blockHeight);
           if (updated) {
             existingPool.name = minerName;
             existingPool.regexes = JSON.stringify([minerName]);
+          }
+        } else if (!minerName) {
+          const fallbackName = this.$shortenAddress(poolAddress);
+          const existingNameIsTrusted = TRUSTED_POOL_DOMAIN.test(existingPool.name) || TRUSTED_POOL_MARKER.test(existingPool.name);
+
+          // Repair names that older versions auto-registered from arbitrary
+          // coinbase prose. Curated pools and already-trusted names are kept.
+          if (isDynamicPool && !existingNameIsTrusted && existingPool.name !== fallbackName) {
+            const updated = await poolsRepository.$updatePoolNameIfNewer(existingPool.id, fallbackName, blockHeight);
+            if (updated) {
+              existingPool.name = fallbackName;
+              existingPool.regexes = JSON.stringify([fallbackName]);
+            }
           }
         }
 

@@ -22,6 +22,7 @@ export interface PoolInfo {
   avgMatchRate: number | null;
   avgFeeDelta: number | null;
   poolUniqueId: number;
+  lastBlockHeight?: number;
 }
 
 export interface PoolStats extends PoolInfo {

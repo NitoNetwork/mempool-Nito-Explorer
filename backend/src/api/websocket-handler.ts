@@ -39,6 +39,7 @@ import { calculateMempoolTxCpfp } from './cpfp';
 import stratumApi, { StratumJob } from './services/stratum';
 import { addAmounts } from './nito-values';
 import publicResponses from './shared-response-cache';
+import miningResponseCache from './mining/mining-response-cache';
 import nitoPools from './nito-pools-instance';
 import nitoActivation from './nito-activation-instance';
 import { NitoActivationSnapshot } from './nito-activation';
@@ -633,6 +634,7 @@ class WebsocketHandler {
 
   handleReorg(): void {
     publicResponses.unavailable();
+    miningResponseCache.suspend();
     nitoActivation.invalidate('chain-changed');
     nitoPools.invalidate();
     this.publishNitoPools(null);

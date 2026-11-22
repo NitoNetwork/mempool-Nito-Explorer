@@ -212,7 +212,7 @@ export function renderSats(value: Nitoshi, network: string, mode: 'sats' | 'btc'
     if (prefix.length) {
       prefix += '-';
     }
-    return `${money.format(value, 'en-US', '1.0-0', 0)} ${prefix}sats`;
+    return `${money.format(value, 'en-US', '1.0-0', 0)} ${prefix}nitoshis`;
   }
 }
 

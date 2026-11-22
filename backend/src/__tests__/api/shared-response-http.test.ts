@@ -27,14 +27,22 @@ beforeEach(() => {
 
 test.each(['/api/v1/statistics/2h', '/api/v1/mining/blocks/rewards/1m'])('shares one exact common-data response for %s', async path => {
   let loads = 0;
+  const expires = new Date(Date.now() + 60_000).toUTCString();
   await withServer((_req, res) => {
     loads++;
+    res.setHeader('X-Total-Count', '40320');
+    res.setHeader('Expires', expires);
+    res.setHeader('Pragma', 'public');
+    res.setHeader('Cache-Control', 'public');
     res.json({ total: '128456589000000000' });
   }, async url => {
     const replies = await Promise.all(Array.from({ length: 20 }, () => fetch(url + path)));
     expect(loads).toBe(1);
     for (const reply of replies) {
       expect(reply.headers.get('cache-control')).toBe('no-store');
+      expect(reply.headers.get('x-total-count')).toBe('40320');
+      expect(reply.headers.get('expires')).toBe(expires);
+      expect(reply.headers.get('pragma')).toBe('public');
       expect(await reply.json()).toEqual({ total: '128456589000000000' });
     }
   });

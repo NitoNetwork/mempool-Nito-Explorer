@@ -11,8 +11,56 @@ import PricesRepository from '../../repositories/PricesRepository';
 import AccelerationRepository from '../../repositories/AccelerationRepository';
 import accelerationApi from '../services/acceleration';
 import { handleError } from '../../utils/api';
+import miningResponseCache, { miningHistoryPolicy, MINING_CACHE_POLICY } from './mining-response-cache';
+
+interface PoolsStatsSnapshot {
+  stats: Awaited<ReturnType<typeof mining.$getPoolsStats>>;
+  blockCount: number;
+}
+
+interface HistoricalHashrateSnapshot {
+  hashrates: Awaited<ReturnType<typeof HashratesRepository.$getNetworkDailyHashrate>>;
+  difficulty: Awaited<ReturnType<typeof DifficultyAdjustmentsRepository.$getAdjustments>>;
+  blockCount: number;
+}
+
+interface CurrentMiningSnapshot {
+  currentHashrate: number;
+  currentDifficulty: number;
+}
 
 class MiningRoutes {
+  private prewarmTimer: NodeJS.Timeout | undefined;
+
+  public startCachePrewarm(): void {
+    if (this.prewarmTimer || !config.DATABASE.ENABLED) {
+      return;
+    }
+    this.refreshCachePrewarm();
+    this.prewarmTimer = setInterval(() => this.refreshCachePrewarm(), 30_000);
+    this.prewarmTimer.unref();
+  }
+
+  public refreshCachePrewarm(): void {
+    if (config.DATABASE.ENABLED && miningResponseCache.available) {
+      void this.$prewarmCache();
+    }
+  }
+
+  /** @asyncSafe All refresh failures are collected and logged below. */
+  private async $prewarmCache(): Promise<void> {
+    const results = await Promise.allSettled([
+      miningResponseCache.get('pools:all', MINING_CACHE_POLICY.liveAggregate, () => this.$loadPoolsStats('all')),
+      miningResponseCache.get('hashrate:1y', MINING_CACHE_POLICY.historical, () => this.$loadHistoricalHashrate('1y')),
+      miningResponseCache.get('reward-stats:40320', MINING_CACHE_POLICY.liveAggregate, () => mining.$getRewardStats(40320)),
+    ]);
+    for (const result of results) {
+      if (result.status === 'rejected') {
+        logger.debug(`Failed to prewarm a mining dashboard snapshot: ${result.reason instanceof Error ? result.reason.message : result.reason}`);
+      }
+    }
+  }
+
   public initRoutes(app: Application) {
     app
       .get(config.MEMPOOL.API_URL_PREFIX + 'mining/pools', this.$listPools)
@@ -52,6 +100,38 @@ class MiningRoutes {
     }
   }
 
+  /** @asyncUnsafe Database failures are propagated to the cache caller. */
+  private async $loadPoolsStats(interval: string): Promise<PoolsStatsSnapshot> {
+    const [stats, blockCount] = await Promise.all([
+      mining.$getPoolsStats(interval),
+      BlocksRepository.$blockCount(null, '4w'),
+    ]);
+    return { stats, blockCount };
+  }
+
+  /** @asyncUnsafe Database failures are propagated to the cache caller. */
+  private async $loadHistoricalHashrate(interval: string): Promise<HistoricalHashrateSnapshot> {
+    const [hashrates, difficulty, blockCount] = await Promise.all([
+      HashratesRepository.$getNetworkDailyHashrate(interval),
+      DifficultyAdjustmentsRepository.$getAdjustments(interval, false),
+      BlocksRepository.$blockCount(null, '4w'),
+    ]);
+    return { hashrates, difficulty, blockCount };
+  }
+
+  /** @asyncSafe Core failures preserve the endpoint's existing zero fallback. */
+  private async $loadCurrentMiningSnapshot(): Promise<CurrentMiningSnapshot> {
+    let currentHashrate = 0;
+    let currentDifficulty = 0;
+    try {
+      currentHashrate = await bitcoinClient.getNetworkHashPs(1008);
+      currentDifficulty = await bitcoinClient.getDifficulty();
+    } catch (e) {
+      logger.debug('Nito Core is not available, using zeroed value for current hashrate and difficulty');
+    }
+    return { currentHashrate, currentDifficulty };
+  }
+
   private async $getHistoricalPrice(req: Request, res: Response): Promise<void> {
     try {
       res.header('Pragma', 'public');
@@ -82,7 +162,11 @@ class MiningRoutes {
 
   private async $getPool(req: Request, res: Response): Promise<void> {
     try {
-      const stats = await mining.$getPoolStat(req.params.slug);
+      const stats = await miningResponseCache.get(
+        `pool:${req.params.slug}`,
+        MINING_CACHE_POLICY.liveAggregate,
+        () => mining.$getPoolStat(req.params.slug),
+      );
       res.header('Pragma', 'public');
       res.header('Cache-control', 'public');
       res.setHeader('Expires', new Date(Date.now() + 1000 * 60).toUTCString());
@@ -98,9 +182,11 @@ class MiningRoutes {
 
   private async $getPoolBlocks(req: Request, res: Response) {
     try {
-      const poolBlocks = await BlocksRepository.$getBlocksByPool(
-        req.params.slug,
-        req.params.height === undefined ? undefined : parseInt(req.params.height, 10),
+      const height = req.params.height === undefined ? undefined : parseInt(req.params.height, 10);
+      const poolBlocks = await miningResponseCache.get(
+        `pool-blocks:${req.params.slug}:${height ?? 'latest'}`,
+        height === undefined ? MINING_CACHE_POLICY.liveAggregate : MINING_CACHE_POLICY.immutablePage,
+        () => BlocksRepository.$getBlocksByPool(req.params.slug, height),
       );
       res.header('Pragma', 'public');
       res.header('Cache-control', 'public');
@@ -121,7 +207,7 @@ class MiningRoutes {
       res.header('Cache-control', 'public');
       res.setHeader('Expires', new Date(Date.now() + 1000 * 60).toUTCString());
 
-      const pools = await mining.$listPools();
+      const pools = await miningResponseCache.get('pool-list', MINING_CACHE_POLICY.poolList, () => mining.$listPools());
       if (!pools) {
         res.status(500).end();
         return;
@@ -140,8 +226,11 @@ class MiningRoutes {
 
   private async $getPools(req: Request, res: Response) {
     try {
-      const stats = await mining.$getPoolsStats(req.params.interval);
-      const blockCount = await BlocksRepository.$blockCount(null, '4w');
+      const { stats, blockCount } = await miningResponseCache.get(
+        `pools:${req.params.interval}`,
+        miningHistoryPolicy(req.params.interval),
+        () => this.$loadPoolsStats(req.params.interval),
+      );
       res.header('Pragma', 'public');
       res.header('Cache-control', 'public');
       res.header('X-total-count', blockCount.toString());
@@ -154,8 +243,17 @@ class MiningRoutes {
 
   private async $getPoolsHistoricalHashrate(req: Request, res: Response) {
     try {
-      const hashrates = await HashratesRepository.$getPoolsWeeklyHashrate(req.params.interval);
-      const blockCount = await BlocksRepository.$blockCount(null, '4w');
+      const { hashrates, blockCount } = await miningResponseCache.get(
+        `pools-hashrate:${req.params.interval}`,
+        MINING_CACHE_POLICY.historical,
+        async () => {
+          const [hashrates, blockCount] = await Promise.all([
+            HashratesRepository.$getPoolsWeeklyHashrate(req.params.interval),
+            BlocksRepository.$blockCount(null, '4w'),
+          ]);
+          return { hashrates, blockCount };
+        },
+      );
       res.header('Pragma', 'public');
       res.header('Cache-control', 'public');
       res.header('X-total-count', blockCount.toString());
@@ -168,8 +266,17 @@ class MiningRoutes {
 
   private async $getPoolHistoricalHashrate(req: Request, res: Response) {
     try {
-      const hashrates = await HashratesRepository.$getPoolWeeklyHashrate(req.params.slug);
-      const blockCount = await BlocksRepository.$blockCount(null, '4w');
+      const { hashrates, blockCount } = await miningResponseCache.get(
+        `pool-hashrate:${req.params.slug}`,
+        MINING_CACHE_POLICY.historical,
+        async () => {
+          const [hashrates, blockCount] = await Promise.all([
+            HashratesRepository.$getPoolWeeklyHashrate(req.params.slug),
+            BlocksRepository.$blockCount(null, '4w'),
+          ]);
+          return { hashrates, blockCount };
+        },
+      );
       res.header('Pragma', 'public');
       res.header('Cache-control', 'public');
       res.header('X-total-count', blockCount.toString());
@@ -185,27 +292,24 @@ class MiningRoutes {
   }
 
   private async $getHistoricalHashrate(req: Request, res: Response) {
-    let currentHashrate = 0, currentDifficulty = 0;
     try {
-      currentHashrate = await bitcoinClient.getNetworkHashPs(1008);
-      currentDifficulty = await bitcoinClient.getDifficulty();
-    } catch (e) {
-      logger.debug('Bitcoin Core is not available, using zeroed value for current hashrate and difficulty');
-    }
-
-    try {
-      const hashrates = await HashratesRepository.$getNetworkDailyHashrate(req.params.interval);
-      const difficulty = await DifficultyAdjustmentsRepository.$getAdjustments(req.params.interval, false);
-      const blockCount = await BlocksRepository.$blockCount(null, '4w');
+      const [snapshot, current] = await Promise.all([
+        miningResponseCache.get(
+          `hashrate:${req.params.interval}`,
+          MINING_CACHE_POLICY.historical,
+          () => this.$loadHistoricalHashrate(req.params.interval),
+        ),
+        this.$loadCurrentMiningSnapshot(),
+      ]);
       res.header('Pragma', 'public');
       res.header('Cache-control', 'public');
-      res.header('X-total-count', blockCount.toString());
+      res.header('X-total-count', snapshot.blockCount.toString());
       res.setHeader('Expires', new Date(Date.now() + 1000 * 300).toUTCString());
       res.json({
-        hashrates: hashrates,
-        difficulty: difficulty,
-        currentHashrate: currentHashrate,
-        currentDifficulty: currentDifficulty,
+        hashrates: snapshot.hashrates,
+        difficulty: snapshot.difficulty,
+        currentHashrate: current.currentHashrate,
+        currentDifficulty: current.currentDifficulty,
       });
     } catch (e) {
       handleError(req, res, 500, 'Failed to get historical hashrate');
@@ -214,8 +318,17 @@ class MiningRoutes {
 
   private async $getHistoricalBlockFees(req: Request, res: Response) {
     try {
-      const blockFees = await mining.$getHistoricalBlockFees(req.params.interval);
-      const blockCount = await BlocksRepository.$blockCount(null, '4w');
+      const { blockFees, blockCount } = await miningResponseCache.get(
+        `block-fees:${req.params.interval}`,
+        miningHistoryPolicy(req.params.interval),
+        async () => {
+          const [blockFees, blockCount] = await Promise.all([
+            mining.$getHistoricalBlockFees(req.params.interval),
+            BlocksRepository.$blockCount(null, '4w'),
+          ]);
+          return { blockFees, blockCount };
+        },
+      );
       res.header('Pragma', 'public');
       res.header('Cache-control', 'public');
       res.header('X-total-count', blockCount.toString());
@@ -246,8 +359,17 @@ class MiningRoutes {
 
   private async $getHistoricalBlockRewards(req: Request, res: Response) {
     try {
-      const blockRewards = await mining.$getHistoricalBlockRewards(req.params.interval);
-      const blockCount = await BlocksRepository.$blockCount(null, '4w');
+      const { blockRewards, blockCount } = await miningResponseCache.get(
+        `block-rewards:${req.params.interval}`,
+        miningHistoryPolicy(req.params.interval),
+        async () => {
+          const [blockRewards, blockCount] = await Promise.all([
+            mining.$getHistoricalBlockRewards(req.params.interval),
+            BlocksRepository.$blockCount(null, '4w'),
+          ]);
+          return { blockRewards, blockCount };
+        },
+      );
       res.header('Pragma', 'public');
       res.header('Cache-control', 'public');
       res.header('X-total-count', blockCount.toString());
@@ -260,8 +382,17 @@ class MiningRoutes {
 
   private async $getHistoricalBlockFeeRates(req: Request, res: Response) {
     try {
-      const blockFeeRates = await mining.$getHistoricalBlockFeeRates(req.params.interval);
-      const blockCount = await BlocksRepository.$blockCount(null, '4w');
+      const { blockFeeRates, blockCount } = await miningResponseCache.get(
+        `block-fee-rates:${req.params.interval}`,
+        miningHistoryPolicy(req.params.interval),
+        async () => {
+          const [blockFeeRates, blockCount] = await Promise.all([
+            mining.$getHistoricalBlockFeeRates(req.params.interval),
+            BlocksRepository.$blockCount(null, '4w'),
+          ]);
+          return { blockFeeRates, blockCount };
+        },
+      );
       res.header('Pragma', 'public');
       res.header('Cache-control', 'public');
       res.header('X-total-count', blockCount.toString());
@@ -274,9 +405,18 @@ class MiningRoutes {
 
   private async $getHistoricalBlockSizeAndWeight(req: Request, res: Response) {
     try {
-      const blockSizes = await mining.$getHistoricalBlockSizes(req.params.interval);
-      const blockWeights = await mining.$getHistoricalBlockWeights(req.params.interval);
-      const blockCount = await BlocksRepository.$blockCount(null, '4w');
+      const { blockSizes, blockWeights, blockCount } = await miningResponseCache.get(
+        `block-sizes-weights:${req.params.interval}`,
+        miningHistoryPolicy(req.params.interval),
+        async () => {
+          const [blockSizes, blockWeights, blockCount] = await Promise.all([
+            mining.$getHistoricalBlockSizes(req.params.interval),
+            mining.$getHistoricalBlockWeights(req.params.interval),
+            BlocksRepository.$blockCount(null, '4w'),
+          ]);
+          return { blockSizes, blockWeights, blockCount };
+        },
+      );
       res.header('Pragma', 'public');
       res.header('Cache-control', 'public');
       res.header('X-total-count', blockCount.toString());
@@ -292,7 +432,11 @@ class MiningRoutes {
 
   private async $getDifficultyAdjustments(req: Request, res: Response) {
     try {
-      const difficulty = await DifficultyAdjustmentsRepository.$getRawAdjustments(req.params.interval, true);
+      const difficulty = await miningResponseCache.get(
+        `difficulty-adjustments:${req.params.interval || 'recent'}`,
+        MINING_CACHE_POLICY.historical,
+        () => DifficultyAdjustmentsRepository.$getRawAdjustments(req.params.interval, true),
+      );
       res.header('Pragma', 'public');
       res.header('Cache-control', 'public');
       res.setHeader('Expires', new Date(Date.now() + 1000 * 300).toUTCString());
@@ -304,7 +448,12 @@ class MiningRoutes {
 
   private async $getRewardStats(req: Request, res: Response) {
     try {
-      const response = await mining.$getRewardStats(parseInt(req.params.blockCount, 10));
+      const blockCount = parseInt(req.params.blockCount, 10);
+      const response = await miningResponseCache.get(
+        `reward-stats:${blockCount}`,
+        MINING_CACHE_POLICY.liveAggregate,
+        () => mining.$getRewardStats(blockCount),
+      );
       res.setHeader('Expires', new Date(Date.now() + 1000 * 60).toUTCString());
       res.json(response);
     } catch (e) {

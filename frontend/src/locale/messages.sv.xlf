@@ -8736,7 +8736,7 @@ Publicera för att lägga till den i mempoolen.</target>
       </trans-unit>
       <trans-unit id="9f88381443e277aca8bb50a8d0a338ab6cf2a68b" datatype="html">
         <source>LBTC Supply Against NITO Holdings</source>
-        <target>LBTC-utbudet i förhållande till BTC-innehav</target>
+        <target>LBTC-utbudet i förhållande till NITO-innehav</target>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/dashboard/dashboard.component.html</context>
           <context context-type="linenumber">184</context>

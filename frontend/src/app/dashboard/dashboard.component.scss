@@ -16,6 +16,57 @@
   font-size: 1rem;
 }
 
+.nito-supply-strip {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  min-height: 58px;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--secondary);
+  border-radius: 4px;
+  background: var(--bg);
+  text-align: left;
+}
+
+.nito-supply-title {
+  flex: 0 0 auto;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.nito-supply-values {
+  display: flex;
+  flex: 1 1 auto;
+  gap: 1.25rem;
+  min-width: 0;
+
+  span { display: flex; flex-direction: column; min-width: 0; }
+  small { color: var(--transparent-fg); line-height: 1.1; }
+  strong { overflow-wrap: anywhere; font-size: 0.88rem; }
+}
+
+.nito-supply-price { flex: 0 0 auto; }
+
+@media (max-width: 767px) {
+  .nito-supply-strip { align-items: flex-start; flex-wrap: wrap; gap: 0.65rem 1rem; }
+  .nito-supply-values { order: 3; flex-basis: 100%; gap: 0.8rem; }
+  .nito-supply-price { margin-left: auto; }
+}
+
+.nito-price-link {
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+
+  .price-history-label::before {
+    content: '·';
+    margin-right: 0.35rem;
+    color: var(--transparent-fg);
+  }
+}
+
 .info-block {
   float: left;
   width: 350px;

@@ -172,6 +172,9 @@ and data volumes for each network.
 
 The backend configuration is generated inside its container from `.env`; do not create or mount a separate `mempool-config.json` for the Compose deployment. The generated configuration always selects the bundled `electrumx` service.
 
+For exact high-activity address accounting and the required pre-deployment
+prewarm check, see [docs/large-address-history.md](docs/large-address-history.md).
+
 The default stack builds:
 
 - MariaDB;
@@ -202,9 +205,11 @@ npm run build:public
 ```
 
 Serve the generated frontend with nginx or another static web server, and proxy `/api/v1/` and `/api/` to the backend.
-The public build ships the independently qualified English and French interfaces.
-Other translation source files remain available for future review but are not
-distributed until their Nito-specific terminology and layouts are qualified.
+The public build ships English plus the original 32 community translation choices.
+Every exposed locale is built and route-checked, and automated terminology checks
+reject translations that map Nito or nitoshi source text back to Bitcoin units.
+Strings that the community catalog does not yet translate intentionally fall back
+to English; this is not a claim that every translation has received native-speaker review.
 
 ## Development Checks
 

@@ -5925,7 +5925,7 @@
       </trans-unit>
       <trans-unit id="9d89af322d1f011851fd136a01a988aec5691e02" datatype="html">
         <source>Number of times that the Federation's NITO holdings fall below 95% of the total LBTC supply</source>
-        <target>フェデレーションのBTC保有量がLBTC総供給量の95%を下回った回数</target>
+        <target>フェデレーションのNITO保有量がLBTC総供給量の95%を下回った回数</target>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/components/liquid-reserves-audit/reserves-ratio-stats/reserves-ratio-stats.component.html</context>
           <context context-type="linenumber">6</context>
@@ -8618,7 +8618,7 @@
       </trans-unit>
       <trans-unit id="60601e02e7c1f6c4dbabd0ef0bb8946003db8dec" datatype="html">
         <source>Only ~<x id="INTERPOLATION" equiv-text="{{ medianFeeNeeded | feeRounding }}"/> nitoshi/vB was needed to get into this block</source>
-        <target>このブロックに入るのに必要なのは〜<x id="INTERPOLATION" equiv-text="{{ medianFeeNeeded | feeRounding }}"/> sat / vBだけでした</target>
+        <target>このブロックに入るのに必要なのは〜<x id="INTERPOLATION" equiv-text="{{ medianFeeNeeded | feeRounding }}"/> nitoshi/vBだけでした</target>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/components/tx-fee-rating/tx-fee-rating.component.html</context>
           <context context-type="linenumber">2</context>
@@ -8735,7 +8735,7 @@
       </trans-unit>
       <trans-unit id="9f88381443e277aca8bb50a8d0a338ab6cf2a68b" datatype="html">
         <source>LBTC Supply Against NITO Holdings</source>
-        <target>BTC保有量に対するLBTC供給量</target>
+        <target>NITO保有量に対するLBTC供給量</target>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/dashboard/dashboard.component.html</context>
           <context context-type="linenumber">184</context>

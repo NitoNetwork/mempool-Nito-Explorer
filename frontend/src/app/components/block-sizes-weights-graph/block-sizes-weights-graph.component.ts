@@ -110,6 +110,7 @@ export class BlockSizesWeightsGraphComponent implements OnInit {
   }
 
   prepareChartOptions(data) {
+    const blockWeightLimitMwu = this.stateService.env.BLOCK_WEIGHT_UNITS / 1_000_000;
     let title: object;
     if (data.sizes.length === 0) {
       title = {
@@ -248,25 +249,6 @@ export class BlockSizesWeightsGraphComponent implements OnInit {
           lineStyle: {
             width: 2,
           },
-          markLine: {
-            silent: true,
-            symbol: 'none',
-            lineStyle: {
-              type: 'solid',
-              color: 'var(--transparent-fg)',
-              opacity: 1,
-              width: 1,
-            },
-            data: [{
-              yAxis: 1,
-              label: {
-                position: 'end',
-                show: true,
-                color: '#ffffff',
-                formatter: `1 MB`
-              }
-            }],
-          }
         },
         {
           zlevel: 1,
@@ -278,7 +260,26 @@ export class BlockSizesWeightsGraphComponent implements OnInit {
           type: 'line',
           lineStyle: {
             width: 2,
-          }
+          },
+          markLine: {
+            silent: true,
+            symbol: 'none',
+            lineStyle: {
+              type: 'solid',
+              color: 'var(--transparent-fg)',
+              opacity: 1,
+              width: 1,
+            },
+            data: [{
+              yAxis: blockWeightLimitMwu,
+              label: {
+                position: 'end',
+                show: true,
+                color: '#ffffff',
+                formatter: `${blockWeightLimitMwu} MWU`
+              }
+            }],
+          },
         },
         {
           zlevel: 1,

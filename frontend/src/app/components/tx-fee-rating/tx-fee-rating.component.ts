@@ -62,8 +62,10 @@ export class TxFeeRatingComponent implements OnInit, OnChanges, OnDestroy {
     const feePervByte = this.tx.effectiveFeePerVsize >= 0 ? this.tx.effectiveFeePerVsize : money.feeRate(this.tx);
     this.medianFeeNeeded = block?.extras?.medianFee;
 
-    // Block not filled or sub-sat median fee
-    if (block.weight < this.stateService.env.BLOCK_WEIGHT_UNITS * 0.95 || this.medianFeeNeeded < 1) {
+    // Keep the observed block median even when the block is not full. Treating
+    // every under-filled block as 1 nitoshi/vB produces misleading 5x/100x
+    // "overpaid" badges on normal Nito transactions.
+    if (this.medianFeeNeeded < 1) {
       this.medianFeeNeeded = 1;
     }
 

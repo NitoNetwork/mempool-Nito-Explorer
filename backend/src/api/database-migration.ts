@@ -9,7 +9,7 @@ import { exactMoneyColumnMigrations, legacyStatisticsMoneyMigrations } from './n
 import { parseDatabaseJsonArray } from '../utils/database-json';
 
 class DatabaseMigration {
-  private static currentVersion = 110;
+  private static currentVersion = 112;
   private queryTimeout = 3600_000;
   private statisticsAddedIndexed = false;
   private uniqueLogs: string[] = [];
@@ -1262,6 +1262,20 @@ class DatabaseMigration {
       }
       await this.updateToSchemaVersion(110);
     }
+
+    if (databaseSchemaVersion < 111) {
+      await this.$executeQuery(this.getCreateAddressStatsCacheQuery(), await this.$checkIfTableExists('address_stats_cache'));
+      await this.updateToSchemaVersion(111);
+    }
+
+    if (databaseSchemaVersion < 112) {
+      await this.$executeQuery(this.getCreateAddressStatsCacheQuery(), await this.$checkIfTableExists('address_stats_cache'));
+      await this.$executeQuery(`ALTER TABLE address_stats_cache
+        ADD COLUMN IF NOT EXISTS tip_hash char(64) NULL,
+        ADD COLUMN IF NOT EXISTS tip_height int unsigned NULL`);
+      await this.$executeQuery(this.getCreateAddressHistoryCursorsQuery(), await this.$checkIfTableExists('address_history_cursors'));
+      await this.updateToSchemaVersion(112);
+    }
   }
 
   /**
@@ -1810,6 +1824,33 @@ class DatabaseMigration {
       PRIMARY KEY (txid),
       FOREIGN KEY (cluster) REFERENCES cpfp_clusters (root) ON DELETE SET NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;`;
+  }
+
+  private getCreateAddressStatsCacheQuery(): string {
+    return `CREATE TABLE IF NOT EXISTS address_stats_cache (
+      scripthash char(64) NOT NULL,
+      fingerprint char(64) NOT NULL,
+      tip_hash char(64) NOT NULL,
+      tip_height int unsigned NOT NULL,
+      chain_stats JSON NOT NULL,
+      mempool_stats JSON NOT NULL,
+      updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (scripthash),
+      INDEX (updated_at)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`;
+  }
+
+  private getCreateAddressHistoryCursorsQuery(): string {
+    return `CREATE TABLE IF NOT EXISTS address_history_cursors (
+      scripthash char(64) NOT NULL,
+      txid char(64) NOT NULL,
+      tx_num bigint unsigned NOT NULL,
+      tip_hash char(64) NOT NULL,
+      tip_height int unsigned NOT NULL,
+      updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (scripthash, txid),
+      INDEX (updated_at)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`;
   }
 
   private getCreateCompactCPFPTableQuery(): string {

@@ -353,7 +353,7 @@ export class TreasuriesGraphComponent implements OnInit, OnChanges, OnDestroy {
               } else if (valSpan > 1_000_000) {
                 return `${(val / 100_000_000).toFixed(3)} NITO`;
               } else {
-                return `${this.amountShortenerPipe.transform(val, 0, undefined, true)} sats`;
+                return `${this.amountShortenerPipe.transform(val, 0, undefined, true)} nitoshis`;
               }
             }
           },

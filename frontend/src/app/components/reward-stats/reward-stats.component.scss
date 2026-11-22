@@ -22,29 +22,19 @@
 }
 
 .fee-estimation-container {
-  display: flex;
-  justify-content: space-between;
-  @media (min-width: 376px) {
-    flex-direction: row;
-  }  
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
   .item {
-    max-width: 150px;
+    min-width: 0;
     margin: 0;
-    width: -webkit-fill-available;
+    width: 100%;
     @media (min-width: 376px) {
-      margin: 0 auto 0px;
+      margin: 0;
     }    
     &:first-child{
-      display: none;
-      @media (min-width: 485px) {
-        display: block;
-      }    
-      @media (min-width: 768px) {
-        display: none;
-      }    
-      @media (min-width: 992px) {
-        display: block;
-      }    
+      display: block;
+      grid-column: 1 / -1;
     }
     &:last-child {
       margin-bottom: 0;
@@ -56,10 +46,24 @@
     }
     .fee-text{
       border-bottom: 1px solid #ffffff1c;
+      max-width: 100%;
       width: fit-content;
       margin: auto;
       line-height: 1.45;
       padding: 0px 2px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .reward-amount {
+      font-size: clamp(15px, 1.15vw, 20px);
+    }
+    .reward-amount app-amount {
+      display: block;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .fiat {
       display: block;

@@ -4,7 +4,7 @@
       <h5 class="card-title" i18n="mining.rewards" i18n-ngbTooltip="mining.rewards"
       ngbTooltip="Miners Reward" placement="bottom" #minersreward [disableTooltip]="!isEllipsisActive(minersreward)">Miners Reward</h5>
       <div class="card-text" i18n-ngbTooltip="@@mining.rewards-desc-4w" ngbTooltip="Amount being paid to miners over the past ~4 weeks" placement="bottom">
-        <div class="fee-text">
+        <div class="fee-text reward-amount">
           <app-amount [satoshis]="rewardStats.totalReward" digitsInfo="1.8-8" [noFiat]="true" [ignoreViewMode]="true"></app-amount>
         </div>
         <span class="fiat">
@@ -26,7 +26,7 @@
       </div>
     </div>
     <div class="item">
-      <h5 class="card-title" i18n="mining.average-fee" i18n-ngbTooltip="@@mining.avg-fee-desc-4w"
+      <h5 class="card-title" i18n="mining.average-fee" i18n-ngbTooltip="@@mining.avg-fee-title-4w"
       ngbTooltip="Avg Tx Fee" placement="bottom" #averagefee [disableTooltip]="!isEllipsisActive(averagefee)">Avg Tx Fee</h5>
       <div class="card-text" i18n-ngbTooltip="@@mining.avg-fee-desc-4w" ngbTooltip="Fee paid on average for each transaction over the past ~4 weeks, rounded down to one nitoshi" placement="bottom">
         <div class="fee-text">{{ rewardStats.feePerTx | nitoAmount:'1.0-0':0 }}

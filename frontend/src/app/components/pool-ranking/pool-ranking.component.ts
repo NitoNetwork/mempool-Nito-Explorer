@@ -115,9 +115,9 @@ export class PoolRankingComponent implements OnInit {
   generatePoolsChartSerieData(miningStats) {
     let poolShareThreshold = 0.5;
     if (isMobile()) {
-      poolShareThreshold = 2;
+      poolShareThreshold = this.widget ? 5 : 2;
     } else if (this.widget) {
-      poolShareThreshold = 1;
+      poolShareThreshold = 3;
     }
 
     const data: object[] = [];
@@ -146,7 +146,8 @@ export class PoolRankingComponent implements OnInit {
         value: pool.share,
         name: pool.name + ((isMobile() || this.widget) ? `` : ` (${pool.share}%)`),
         label: {
-          overflow: 'none',
+          overflow: 'truncate',
+          width: this.widget ? 112 : 180,
           color: 'var(--tooltip-grey)',
           alignTo: 'edge',
           edgeDistance: edgeDistance,
@@ -189,7 +190,8 @@ export class PoolRankingComponent implements OnInit {
       value: totalShareOther,
       name:  $localize`Other (${percentage})`,
       label: {
-        overflow: 'none',
+        overflow: 'truncate',
+        width: this.widget ? 112 : 180,
         color: 'var(--tooltip-grey)',
         alignTo: 'edge',
         edgeDistance: edgeDistance
@@ -235,18 +237,21 @@ export class PoolRankingComponent implements OnInit {
       series: [
         {
           zlevel: 0,
+          avoidLabelOverlap: true,
           minShowLabelAngle: 1.8,
           name: 'Mining pool',
           type: 'pie',
           radius: pieSize,
           data: this.generatePoolsChartSerieData(miningStats),
           labelLine: {
+            length: this.widget ? 10 : 15,
+            length2: this.widget ? 8 : 12,
             lineStyle: {
               width: 2,
             },
           },
           label: {
-            fontSize: 14,
+            fontSize: this.widget ? 12 : 14,
             formatter: (serie) => `${serie.name === 'Binance Pool' ? 'Binance\nPool' : serie.name}`,
           },
           itemStyle: {

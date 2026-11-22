@@ -228,7 +228,7 @@
       <td class="td-width" i18n="transaction.fee|Transaction fee">Fee</td>
       <td class="text-wrap">{{ money.compare(tx.fee, 0) >= 0 ? (tx.fee | nitoAmount:'1.0-0':0) : 'Unknown' }} <span *ngIf="money.compare(tx.fee, 0) >= 0" class="symbol">nitoshi</span>
         @if (isAcceleration && (money.compare(accelerationInfo?.bidBoost ?? tx.feeDelta ?? 0, 0) > 0)) {
-          <span class="oobFees" i18n-ngbTooltip="Acceleration Fees" ngbTooltip="Acceleration fees paid out-of-band"> +{{ accelerationInfo?.bidBoost ?? tx.feeDelta | nitoAmount:'1.0-0':0 }} </span><span class="symbol" i18n="shared.sats">sats</span>
+          <span class="oobFees" i18n-ngbTooltip="Acceleration Fees" ngbTooltip="Acceleration fees paid out-of-band"> +{{ accelerationInfo?.bidBoost ?? tx.feeDelta | nitoAmount:'1.0-0':0 }} </span><span class="symbol">nitoshis</span>
         }
         <span class="fiat"><app-fiat *ngIf="money.compare(tx.fee, 0) >= 0" [blockConversion]="tx.price" [value]="money.sum(tx.fee, isAcceleration ? ((accelerationInfo?.bidBoost ?? tx.feeDelta) || 0) : 0)"></app-fiat></span>
       </td>

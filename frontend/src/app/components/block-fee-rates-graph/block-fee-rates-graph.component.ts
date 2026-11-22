@@ -304,7 +304,7 @@ export class BlockFeeRatesGraphComponent implements OnInit {
             }
             const selectedPowerOfTen: any = selectPowerOfTen(val);
             const newVal = Math.round(val / selectedPowerOfTen.divider);
-            return `${newVal}${selectedPowerOfTen.unit} s/${weightMode ? 'WU': 'vB'}`;
+            return `${newVal}${selectedPowerOfTen.unit} nitoshi/${weightMode ? 'WU': 'vB'}`;
           },
         },
         splitLine: {

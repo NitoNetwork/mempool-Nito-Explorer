@@ -133,17 +133,21 @@ assert.equal(constantsSource.includes("Bitcoin's 1st Halving"), false);
 assert.ok(constantsSource.includes('export const specialBlocks'));
 const qualifiedLanguageBlock = /export const languages: Language\[\] = \[([\s\S]*?)\];/.exec(constantsSource)[1];
 const qualifiedLanguages = [...qualifiedLanguageBlock.matchAll(/\{ code: '([^']+)', name: '([^']+)' \},/g)].map(match => match[1]);
-assert.deepEqual(qualifiedLanguages, ['en', 'fr']);
+assert.equal(qualifiedLanguages.length, 33);
+assert.equal(new Set(qualifiedLanguages).size, qualifiedLanguages.length);
 const angularConfig = JSON.parse(fs.readFileSync(path.join(root, 'frontend/angular.json'), 'utf8'));
-assert.deepEqual(angularConfig.projects.mempool.architect.build.configurations.public.localize, ['en-US', 'fr']);
+const publicLocales = angularConfig.projects.mempool.architect.build.configurations.public.localize;
+assert.deepEqual(publicLocales, qualifiedLanguages.map(locale => locale === 'en' ? 'en-US' : locale));
 assert.equal(angularConfig.projects.mempool.architect.build.configurations.public.i18nMissingTranslation, 'warning');
 const footerTemplate = fs.readFileSync(path.join(root, 'frontend/src/app/shared/components/global-footer/global-footer.component.html'), 'utf8');
 assert.ok(footerTemplate.includes('<app-language-selector></app-language-selector>'));
 const publicBuild = JSON.parse(fs.readFileSync(path.join(root, 'frontend/package.json'), 'utf8')).scripts['build:public'];
 assert.ok(publicBuild.includes('--configuration production,public'));
 const publicNginx = fs.readFileSync(path.join(root, 'docker/nginx/nito-explorer.conf'), 'utf8');
-assert.ok(publicNginx.includes('location ^~ /fr/'));
-assert.ok(publicNginx.includes('try_files $uri $uri/ /fr/index.html'));
+const nginxLocales = /<nito_locale>([^)]+)/.exec(publicNginx)[1].split('|');
+assert.deepEqual(nginxLocales, publicLocales.filter(locale => locale !== 'en-US'));
+assert.ok(publicNginx.includes('try_files $uri $uri/ /$nito_locale/index.html'));
+assert.ok(publicNginx.includes('return 302 $uri/'));
 
 const compose = fs.readFileSync(path.join(root, 'docker-compose.yml'), 'utf8');
 assert.ok(compose.includes('FIAT_PRICE_ENABLED: "${FIAT_PRICE_ENABLED:-true}"'));
@@ -200,6 +204,12 @@ const dashboardTemplates = [
   'frontend/src/app/components/custom-dashboard/custom-dashboard.component.html',
   'frontend/src/app/components/acceleration/accelerator-dashboard/accelerator-dashboard.component.html',
 ].map(file => fs.readFileSync(path.join(root, file), 'utf8')).join('\n');
+const homeDashboard = fs.readFileSync(path.join(root, 'frontend/src/app/dashboard/dashboard.component.html'), 'utf8');
+assert.ok(homeDashboard.includes('dashboard.current-nito-fiat'));
+assert.ok(homeDashboard.includes('Current NITO/{{ currency }}'));
+assert.ok(homeDashboard.includes('<app-fiat [value]="100_000_000" digitsInfo="1.2-8"></app-fiat>'));
+assert.ok(homeDashboard.includes("['/graphs/price' | relativeUrl]"));
+assert.ok(homeDashboard.includes('*ngIf="stateService.env.HISTORICAL_PRICE"'));
 assert.equal(dashboardTemplates.includes('Confirmed public accounting.'), false);
 assert.equal(dashboardTemplates.includes('Unconfirmed transactions excluded.'), false);
 for (const sourceText of [blockFilters, faqTemplate, faqData, dashboardTemplates]) {

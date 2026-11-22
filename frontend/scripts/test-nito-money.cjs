@@ -171,6 +171,7 @@ const { BehaviorSubject } = require('rxjs');
 const { WebsocketService } = load('src/app/services/websocket.service.ts');
 const socket = Object.create(WebsocketService.prototype);
 socket.stateService = {
+  env: { HISTORICAL_PRICE: true },
   nitoStatus$: new BehaviorSubject({ available: true }),
   nitoActivation$: new BehaviorSubject(null),
   nitoPools$: new BehaviorSubject({ total: { chainValueNitoshi: max.toString() } }),
@@ -294,15 +295,17 @@ socket.initRbfSummary().then(async () => {
   globalThis.HTMLElement = dom.HTMLElement;
   const { TestBed } = require('@angular/core/testing');
   const { BrowserDynamicTestingModule, platformBrowserDynamicTesting } = require('@angular/platform-browser-dynamic/testing');
-  const { Component, NO_ERRORS_SCHEMA, provideZonelessChangeDetection } = require('@angular/core');
+  const { Component, NO_ERRORS_SCHEMA, Pipe, provideZonelessChangeDetection } = require('@angular/core');
   const { CommonModule } = require('@angular/common');
   TestBed.initTestEnvironment(BrowserDynamicTestingModule, platformBrowserDynamicTesting());
   TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
   const template = relative => fs.readFileSync(path.join(frontend, 'src/app', relative), 'utf8');
   const fixtures = [];
+  class RelativeUrlHarnessPipe { transform(value) { return value; } }
+  Pipe({ name: 'relativeUrl', standalone: true })(RelativeUrlHarnessPipe);
   const render = (source, context) => {
     class Harness { constructor() { Object.assign(this, context); } }
-    Component({ selector: 'test-activation-view-' + fixtures.length, standalone: true, imports: [CommonModule],
+    Component({ selector: 'test-activation-view-' + fixtures.length, standalone: true, imports: [CommonModule, RelativeUrlHarnessPipe],
       schemas: [NO_ERRORS_SCHEMA], template: source })(Harness);
     const fixture = TestBed.createComponent(Harness);
     fixture.detectChanges();
@@ -314,6 +317,7 @@ socket.initRbfSummary().then(async () => {
     total: { chainValue: '1284565890.00000000' }, blocks: 100, chain: 'regtest' };
   const publicPools$ = new BehaviorSubject(inactivePublicPools);
   const poolFixture = render(poolTemplate, { stateService: socket.stateService, nitoPools$: publicPools$ });
+  assert.match(poolFixture.nativeElement.querySelector('.nito-price-link')?.textContent || '', /Current NITO\/USD/);
   const { TxFeaturesComponent } = load('src/app/components/tx-features/tx-features.component.ts');
   socket.stateService.network = 'regtest';
   const features = new TxFeaturesComponent(socket.stateService);

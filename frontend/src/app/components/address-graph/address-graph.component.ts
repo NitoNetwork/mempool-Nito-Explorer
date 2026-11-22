@@ -341,7 +341,7 @@ export class AddressGraphComponent implements OnChanges, OnDestroy {
                 }
                 return `${(val / 100_000_000).toFixed(3)} NITO`;
               } else {
-                return `${this.amountShortenerPipe.transform(val, 0, undefined, true)} sats`;
+                return `${this.amountShortenerPipe.transform(val, 0, undefined, true)} nitoshis`;
               }
             }
           },

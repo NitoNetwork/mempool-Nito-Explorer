@@ -44,7 +44,7 @@ Before publishing a changed explorer snapshot:
 
 1. verify the pinned ElectrumX import;
 2. run affected backend, SQL, frontend, and browser tests;
-3. build the qualified English/French public frontend and the delivered containers;
+3. build English and every exposed community locale, verify the documented English fallback, and build the delivered containers;
 4. scan the final Git tree for credentials, keys, wallet/node data, private evidence, generated artifacts, and stale private repository links;
 5. verify documentation links and strict UTF-8 decoding;
 6. record the exact Core, ElectrumX, explorer, image, and artifact hashes used by the final checks.

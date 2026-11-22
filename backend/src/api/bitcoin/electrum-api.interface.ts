@@ -9,6 +9,15 @@ export namespace IElectrumApi {
     height: number;
     tx_hash: string;
     fee?: Amount;
+    cursor?: number;
+  }
+
+  export interface ScriptHashHistoryPage {
+    confirmed: ScriptHashHistory[];
+    unconfirmed: ScriptHashHistory[];
+    cursor: number | null;
+    has_more: boolean;
+    total: number;
   }
 
   export interface ScriptHashUtxos {

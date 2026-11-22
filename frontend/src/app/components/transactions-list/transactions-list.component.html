@@ -540,7 +540,7 @@
       <div class="float-left mt-2-5" *ngIf="!transactionPage && !tx.vin[0]?.is_coinbase && money.compare(tx.fee, -1) !== 0">
         <app-fee-rate [fee]="money.feeRate(tx)"></app-fee-rate>
         <span class="d-none d-sm-inline-block">&nbsp;&ndash; {{ tx.fee | nitoAmount:'1.0-0':0 }} <span class="symbol"
-            i18n="shared.sats">sats</span> <span class="fiat"><app-fiat [blockConversion]="tx.price" [value]="tx.fee"></app-fiat></span></span>
+            >nitoshis</span> <span class="fiat"><app-fiat [blockConversion]="tx.price" [value]="tx.fee"></app-fiat></span></span>
       </div>
       <div class="float-left mt-2-5 grey-info-text" *ngIf="money.compare(tx.fee, -1) === 0 && !tx.has_private_bundle" i18n="transactions-list.load-to-reveal-fee-info">Show more inputs to reveal fee data</div>
 

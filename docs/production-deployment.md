@@ -65,10 +65,10 @@ The backend still uses Nito Core RPC for live mempool data and block statistics.
 
 1. Record the current explorer unit states, listeners, API health, and deployed commit.
 2. Back up only the explorer configuration, backend, frontend, and explorer unit files.
-3. Build the new backend and frontend without changing any running service.
+3. Build the new backend and frontend without changing any running service. Copy the previous release's content-hashed `.js` and `.css` bundles into the new frontend tree without overwriting new files. Keep them for at least one normal browser-cache lifetime so an already-open tab can finish a lazy navigation during the cutover.
 4. Start `nito-electrumx.service` on `127.0.0.1:51001` and `127.0.0.1:8001` while the old Electrs unit remains active.
 5. Wait until Nito ElectrumX reaches the exact Nito Core tip. Validate `server.version`, `blockchain.headers.subscribe`, and a known transaction/history query.
-6. Replace the explorer backend/frontend files and restart only `mempool-nito.service`.
+6. Replace the explorer backend/frontend files and restart only `mempool-nito.service`. Serve every locale's `index.html` with `Cache-Control: no-store`; only content-hashed bundles are immutable.
 7. Validate the local API, websocket, public HTTPS pages, mobile transaction tracker, service logs, RPC connection count, and socket `TIME_WAIT` trend.
 8. Only after those checks pass, stop and disable the obsolete explorer-specific Electrs unit. Keep its database for rollback until a later, separately approved cleanup.
 

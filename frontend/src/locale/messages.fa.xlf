@@ -750,7 +750,7 @@
       </trans-unit>
       <trans-unit id="d2eb45d1cd8cd146b7cb0223ab97a4b03b614060" datatype="html">
         <source>nitoshi/vB</source>
-        <target>‏sat بر vB‏</target>
+        <target>‏nitoshi بر vB‏</target>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/components/accelerate-checkout/accelerate-checkout.component.html</context>
           <context context-type="linenumber">121</context>
@@ -1142,7 +1142,7 @@
       </trans-unit>
       <trans-unit id="fc60844faa5ea496fe8b8cfb7620b2bfc733c90b" datatype="html">
         <source>Accelerate to ~<x id="INTERPOLATION" equiv-text="{{ x | number : '1.0-0' }}"/> nitoshi/vB</source>
-        <target>شتاب‌دهی به حدود <x id="INTERPOLATION" equiv-text="{{ x | number : '1.0-0' }}"/> sat بر vB</target>
+        <target>شتاب‌دهی به حدود <x id="INTERPOLATION" equiv-text="{{ x | number : '1.0-0' }}"/> nitoshi بر vB</target>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/components/accelerate-checkout/accelerate-checkout.component.html</context>
           <context context-type="linenumber">615</context>
@@ -6764,7 +6764,7 @@
       </trans-unit>
       <trans-unit id="ea22e5fb229522f3faa5e87dbf0c5f56ddc234fb" datatype="html">
         <source>Maximum fee rate (nitoshi/vB)</source>
-        <target>حداکثر نرخ کارمزد (sat بر vB)</target>
+        <target>حداکثر نرخ کارمزد (nitoshi بر vB)</target>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/components/push-transaction/push-transaction.component.html</context>
           <context context-type="linenumber">20</context>
@@ -6979,7 +6979,7 @@
       </trans-unit>
       <trans-unit id="31443c29cb161e8aa661eb5035f675746ef95b45" datatype="html">
         <source>nitoshi/tx</source>
-        <target>sat بر tx</target>
+        <target>nitoshi بر tx</target>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/components/reward-stats/reward-stats.component.html</context>
           <context context-type="linenumber">33</context>

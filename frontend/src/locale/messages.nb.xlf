@@ -536,7 +536,7 @@
       </trans-unit>
       <trans-unit id="e4b2d9e6a2ab9e6ca34027ec03beaac42b7badd4" datatype="html">
         <source>nitoshi</source>
-        <target>sat</target>
+        <target>nitoshi</target>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/components/accelerate-checkout/accelerate-checkout.component.html</context>
           <context context-type="linenumber">65</context>
@@ -5925,7 +5925,7 @@
       </trans-unit>
       <trans-unit id="9d89af322d1f011851fd136a01a988aec5691e02" datatype="html">
         <source>Number of times that the Federation's NITO holdings fall below 95% of the total LBTC supply</source>
-        <target>Antall ganger føderasjonens BTC-beholdninger faller under 95 % av det totale LBTC-tilbudet</target>
+        <target>Antall ganger føderasjonens NITO-beholdninger faller under 95 % av det totale LBTC-tilbudet</target>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/components/liquid-reserves-audit/reserves-ratio-stats/reserves-ratio-stats.component.html</context>
           <context context-type="linenumber">6</context>
@@ -6979,7 +6979,7 @@
       </trans-unit>
       <trans-unit id="31443c29cb161e8aa661eb5035f675746ef95b45" datatype="html">
         <source>nitoshi/tx</source>
-        <target>sat/tx</target>
+        <target>nitoshi/tx</target>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/components/reward-stats/reward-stats.component.html</context>
           <context context-type="linenumber">33</context>
@@ -8735,7 +8735,7 @@
       </trans-unit>
       <trans-unit id="9f88381443e277aca8bb50a8d0a338ab6cf2a68b" datatype="html">
         <source>LBTC Supply Against NITO Holdings</source>
-        <target>LBTC-tilførsel mot BTC-beholdning</target>
+        <target>LBTC-tilførsel mot NITO-beholdning</target>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/dashboard/dashboard.component.html</context>
           <context context-type="linenumber">184</context>

@@ -60,7 +60,8 @@ class DifficultyAdjustmentsRepository {
   }
 
   public async $getRawAdjustments(interval: string | null, descOrder: boolean = false): Promise<IndexedDifficultyAdjustment[]> {
-    interval = Common.getSqlInterval(interval);
+    const latestOnly = interval === 'latest';
+    interval = latestOnly ? null : Common.getSqlInterval(interval);
 
     let query = `SELECT 
       UNIX_TIMESTAMP(time) as time,
@@ -73,7 +74,9 @@ class DifficultyAdjustmentsRepository {
       query += ` WHERE time BETWEEN DATE_SUB(NOW(), INTERVAL ${interval}) AND NOW()`;
     }
 
-    if (descOrder === true) {
+    if (latestOnly) {
+      query += ` ORDER BY height DESC LIMIT 6`;
+    } else if (descOrder === true) {
       query += ` ORDER BY height DESC`;
     } else {
       query += ` ORDER BY height`;

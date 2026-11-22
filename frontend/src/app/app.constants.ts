@@ -139,62 +139,38 @@ export interface Language {
 
 export const languages: Language[] = [
   { code: 'en', name: 'English' },
+  { code: 'ar', name: 'العربية' },
+  { code: 'cs', name: 'Čeština' },
+  { code: 'da', name: 'Dansk' },
+  { code: 'de', name: 'Deutsch' },
+  { code: 'es', name: 'Español' },
+  { code: 'fa', name: 'فارسی' },
   { code: 'fr', name: 'Français' },
-];
-
-// Retained as source material only. The public build and UI ship only the
-// languages listed above until each additional translation is reviewed against
-// the Nito-specific interface.
-export const unqualifiedTranslations: Language[] = [
-   { code: 'ar', name: 'العربية' },         // Arabic
-// { code: 'bg', name: 'Български' },       // Bulgarian
-// { code: 'bs', name: 'Bosanski' },        // Bosnian
-// { code: 'ca', name: 'Català' },          // Catalan
-   { code: 'cs', name: 'Čeština' },         // Czech
-   { code: 'da', name: 'Dansk' },           // Danish
-   { code: 'de', name: 'Deutsch' },         // German
-// { code: 'et', name: 'Eesti' },           // Estonian
-// { code: 'el', name: 'Ελληνικά' },        // Greek
-   { code: 'en', name: 'English' },         // English
-   { code: 'es', name: 'Español' },         // Spanish
-// { code: 'eo', name: 'Esperanto' },       // Esperanto
-// { code: 'eu', name: 'Euskara' },         // Basque
-   { code: 'fa', name: 'فارسی' },           // Persian
-   { code: 'fr', name: 'Français' },        // French
-// { code: 'gl', name: 'Galego' },          // Galician
-   { code: 'ko', name: '한국어' },          // Korean
-   { code: 'hr', name: 'Hrvatski' },        // Croatian
-// { code: 'id', name: 'Bahasa Indonesia' },// Indonesian
-   { code: 'hi', name: 'हिन्दी' },             // Hindi
-   { code: 'ne', name: 'नेपाली' },            // Nepalese
-   { code: 'it', name: 'Italiano' },        // Italian
-   { code: 'he', name: 'עברית' },           // Hebrew
-   { code: 'ka', name: 'ქართული' },         // Georgian
-// { code: 'lv', name: 'Latviešu' },        // Latvian
-   { code: 'lt', name: 'Lietuvių' },        // Lithuanian
-   { code: 'hu', name: 'Magyar' },          // Hungarian
-   { code: 'mk', name: 'Македонски' },      // Macedonian
-// { code: 'ms', name: 'Bahasa Melayu' },   // Malay
-   { code: 'nl', name: 'Nederlands' },      // Dutch
-   { code: 'ja', name: '日本語' },          // Japanese
-   { code: 'nb', name: 'Norsk' },           // Norwegian Bokmål
-// { code: 'nn', name: 'Norsk Nynorsk' },   // Norwegian Nynorsk
-   { code: 'pl', name: 'Polski' },          // Polish
-   { code: 'pt', name: 'Português' },       // Portuguese
-// { code: 'pt-BR', name: 'Português (Brazil)' }, // Portuguese (Brazil)
-   { code: 'ro', name: 'Română' },          // Romanian
-   { code: 'ru', name: 'Русский' },         // Russian
-// { code: 'sk', name: 'Slovenčina' },      // Slovak
-   { code: 'sl', name: 'Slovenščina' },     // Slovenian
-// { code: 'sr', name: 'Српски / srpski' }, // Serbian
-// { code: 'sh', name: 'Srpskohrvatski / српскохрватски' },// Serbo-Croatian
-   { code: 'fi', name: 'Suomi' },           // Finnish
-   { code: 'sv', name: 'Svenska' },         // Swedish
-   { code: 'th', name: 'ไทย' },             // Thai
-   { code: 'tr', name: 'Türkçe' },          // Turkish
-   { code: 'uk', name: 'Українська' },      // Ukrainian
-   { code: 'vi', name: 'Tiếng Việt' },      // Vietnamese
-   { code: 'zh', name: '中文' },            // Chinese
+  { code: 'ko', name: '한국어' },
+  { code: 'hr', name: 'Hrvatski' },
+  { code: 'hi', name: 'हिन्दी' },
+  { code: 'ne', name: 'नेपाली' },
+  { code: 'it', name: 'Italiano' },
+  { code: 'he', name: 'עברית' },
+  { code: 'ka', name: 'ქართული' },
+  { code: 'lt', name: 'Lietuvių' },
+  { code: 'hu', name: 'Magyar' },
+  { code: 'mk', name: 'Македонски' },
+  { code: 'nl', name: 'Nederlands' },
+  { code: 'ja', name: '日本語' },
+  { code: 'nb', name: 'Norsk' },
+  { code: 'pl', name: 'Polski' },
+  { code: 'pt', name: 'Português' },
+  { code: 'ro', name: 'Română' },
+  { code: 'ru', name: 'Русский' },
+  { code: 'sl', name: 'Slovenščina' },
+  { code: 'fi', name: 'Suomi' },
+  { code: 'sv', name: 'Svenska' },
+  { code: 'th', name: 'ไทย' },
+  { code: 'tr', name: 'Türkçe' },
+  { code: 'uk', name: 'Українська' },
+  { code: 'vi', name: 'Tiếng Việt' },
+  { code: 'zh', name: '中文' },
 ];
 
 // Consensus milestones must be added only after they are sourced and qualified

@@ -1,18 +1,23 @@
 
 <div class="container-xl dashboard-container" *ngIf="(network$ | async) !== 'liquid'; else liquidDashboard">
-  <section class="card mb-4" aria-label="Confirmed Nito pools">
-    <div class="card-body">
-      <h2 class="h5">Confirmed Nito pools</h2>
+  <section class="nito-supply-strip mb-3" aria-label="Confirmed Nito supply" i18n-aria-label="@@dashboard.confirmed-pools-label">
+      <h2 class="nito-supply-title" i18n="@@dashboard.confirmed-pools-title">Nito supply</h2>
       @if (nitoPools$ | async; as pools) {
-        <div class="row">
-          <div class="col-md-4 mb-2">Transparent<br><strong>{{ pools.transparent.chainValue }} NITO</strong></div>
-          <div class="col-md-4 mb-2" *ngIf="pools.orchard">Orchard<br><strong>{{ pools.orchard.chainValue }} NITO</strong></div>
-          <div class="col-md-4 mb-2">Total confirmed<br><strong>{{ pools.total.chainValue }} NITO</strong></div>
+        <div class="nito-supply-values">
+          <span><small i18n="@@dashboard.pool-total-confirmed">Total</small><strong>{{ pools.total.chainValue }} NITO</strong></span>
+          <span><small i18n="@@dashboard.pool-transparent">Transparent</small><strong>{{ pools.transparent.chainValue }}</strong></span>
+          <span *ngIf="pools.orchard"><small i18n="@@dashboard.pool-orchard">Orchard</small><strong>{{ pools.orchard.chainValue }}</strong></span>
         </div>
       } @else {
-        <p class="mb-0">Confirmed pool accounting unavailable or synchronizing.</p>
+        <span class="text-muted" i18n="@@dashboard.confirmed-pools-unavailable">Supply synchronizing</span>
       }
-    </div>
+      <div class="nito-supply-price">
+        <a *ngIf="stateService.env.HISTORICAL_PRICE" class="nito-price-link" [routerLink]="['/graphs/price' | relativeUrl]">
+          <span i18n="dashboard.current-nito-fiat">Current NITO/{{ currency }}</span>
+          <strong><app-fiat [value]="100_000_000" digitsInfo="1.2-8"></app-fiat></strong>
+          <span class="price-history-label" i18n="dashboard.price-history">Price history</span>
+        </a>
+      </div>
   </section>
   <div class="row row-cols-1 row-cols-md-2" *ngIf="{ value: (mempoolInfoData$ | async) } as mempoolInfoData">
     <ng-container>

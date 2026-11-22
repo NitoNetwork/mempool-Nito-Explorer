@@ -39,7 +39,7 @@ export class BtcComponent implements OnInit, OnChanges {
       this.unit = 'NITO';
     } else {
       this.value = Math.round(this.satoshis);
-      this.unit = 'sats';
+      this.unit = 'nitoshis';
     }
   }
 }

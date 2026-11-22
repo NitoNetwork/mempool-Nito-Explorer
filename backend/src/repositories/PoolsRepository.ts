@@ -44,7 +44,8 @@ class PoolsRepository {
           slug,
           AVG(blocks_audits.match_rate) AS avgMatchRate,
           CAST(AVG((CAST(blocks.fees as DECIMAL(65,0)) - CAST(blocks_audits.expected_fees as DECIMAL(65,0))) / NULLIF(blocks_audits.expected_fees, 0)) AS DOUBLE) AS avgFeeDelta,
-          unique_id as poolUniqueId
+          unique_id as poolUniqueId,
+          MAX(blocks.height) as lastBlockHeight
       FROM blocks
       JOIN pools on pools.id = pool_id
       LEFT JOIN blocks_audits ON blocks_audits.height = blocks.height

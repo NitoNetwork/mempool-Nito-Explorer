@@ -53,6 +53,7 @@ import publicResponses from './api/shared-response-cache';
 import nitoPools from './api/nito-pools-instance';
 import feeApi from './api/fee-api';
 import nitoActivation from './api/nito-activation-instance';
+import miningResponseCache from './api/mining/mining-response-cache';
 
 class Server {
   private wss: WebSocket.Server | undefined;
@@ -287,7 +288,13 @@ class Server {
       if (numHandledBlocks === 0) {
         publicResponses.changingMempool(newMempool);
         await memPool.$updateMempool(newMempool, latestAccelerations, minFeeMempool, minFeeTip, pollRate);
-        publicResponses.observe(blocks.getBlocks().slice(-1)[0]?.id || '', newMempool);
+        const observedTip = blocks.getBlocks().slice(-1)[0]?.id || '';
+        publicResponses.observe(observedTip, newMempool);
+        const miningTipChanged = miningResponseCache.observeTip(observedTip);
+        if (miningResponseCache.resume() || miningTipChanged) {
+          miningRoutes.refreshCachePrewarm();
+        }
+        miningRoutes.startCachePrewarm();
         websocketHandler.publishNitoStatus(true);
       }
       void indexer.$run();
@@ -306,6 +313,7 @@ class Server {
       this.backendRetryCount = 0;
     } catch (e: any) {
       publicResponses.unavailable();
+      miningResponseCache.suspend();
       feeApi.invalidate();
       mempoolBlocks.invalidate();
       nitoPools.invalidate();

@@ -1,6 +1,20 @@
 import { Request, Response, NextFunction } from 'express';
 
-type Reply = { body: string; status: number; type: string };
+type ReplyHeader = string | number | string[];
+type Reply = { body: string; status: number; type: string; headers: Record<string, ReplyHeader> };
+
+const SHARED_HEADERS = ['x-total-count', 'expires', 'pragma', 'last-modified', 'content-language', 'vary'];
+
+function replayReply(res: Response, send: Response['send'], reply: Reply): void {
+  res.status(reply.status).type(reply.type);
+  for (const [name, value] of Object.entries(reply.headers)) {
+    res.setHeader(name, value);
+  }
+  // The completed snapshot is shared by this process; clients must still ask
+  // the server for the latest snapshot after websocket tip notifications.
+  res.setHeader('Cache-Control', 'no-store');
+  send(reply.body);
+}
 
 /** Bounded process-wide memoization with soft refresh and hard failure fences. */
 export class SharedSnapshotCache<T> {
@@ -118,8 +132,7 @@ class PublicResponses {
     if (changing) {
       const stale = cache.peek(req.path);
       if (stale) {
-        res.status(stale.status).type(stale.type).setHeader('Cache-Control', 'no-store');
-        send(stale.body); return;
+        replayReply(res, send, stale); return;
       }
     }
     cache.get(req.path, () => new Promise<Reply>((resolve, reject) => {
@@ -128,15 +141,21 @@ class PublicResponses {
       res.send = ((body: any) => {
         if (done) { return res; }
         done = true; clearTimeout(timer);
+        const headers: Record<string, ReplyHeader> = {};
+        for (const name of SHARED_HEADERS) {
+          const value = res.getHeader(name);
+          if (value !== undefined) {
+            headers[name] = value;
+          }
+        }
         resolve({ body: typeof body === 'string' ? body : JSON.stringify(body), status: res.statusCode,
-          type: String(res.getHeader('Content-Type') || 'application/json; charset=utf-8') });
+          type: String(res.getHeader('Content-Type') || 'application/json; charset=utf-8'), headers });
         return res;
       }) as Response['send'];
       next();
     }), reply => reply.status === 200).then(reply => {
       if (res.destroyed || res.writableEnded) { return; }
-      res.status(reply.status).type(reply.type).setHeader('Cache-Control', 'no-store');
-      send(reply.body);
+      replayReply(res, send, reply);
     }).catch(() => {
       if (!res.destroyed && !res.writableEnded) { res.status(503).setHeader('Retry-After', '1'); send('Public chain snapshot unavailable; retry'); }
     });

@@ -750,10 +750,12 @@ export class Common {
       flags |= TransactionFlags.fake_pubkey;
     }
 
-    // fast but bad heuristic to detect possible coinjoins
-    // (at least 5 inputs and 5 outputs, less than half of which are unique amounts, with no address reuse)
+    // Conservative heuristic for possible coinjoins. Requiring a repeated output
+    // denomination avoids classifying pool payouts merely because they consolidate
+    // many equal-value coinbase rewards.
     const addressReuse = Object.keys(reusedOutputAddresses).reduce((acc, key) => Math.max(acc, (reusedInputAddresses[key] || 0) + (reusedOutputAddresses[key] || 0)), 0) > 1;
-    if (!tx.has_private_bundle && !tx.private_bundle && !addressReuse && tx.vin.length >= 5 && tx.vout.length >= 5 && (Object.keys(inValues).length + Object.keys(outValues).length) <= (tx.vin.length + tx.vout.length) / 2 ) {
+    const largestEqualOutputSet = (Object.values(outValues) as number[]).reduce((largest, count) => Math.max(largest, count), 0);
+    if (!tx.has_private_bundle && !tx.private_bundle && !addressReuse && tx.vin.length >= 5 && tx.vout.length >= 5 && largestEqualOutputSet >= 5 && (Object.keys(inValues).length + Object.keys(outValues).length) <= (tx.vin.length + tx.vout.length) / 2 ) {
       flags |= TransactionFlags.coinjoin;
     }
     // more than 5:1 input:output ratio

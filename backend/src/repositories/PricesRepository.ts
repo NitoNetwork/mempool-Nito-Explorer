@@ -164,12 +164,17 @@ export const MAX_PRICES = {
   ZAR: 10000000000,
 };
 
+function isDuplicatePriceTime(error: unknown): boolean {
+  const databaseError = error as { code?: string, errno?: number } | null;
+  return databaseError?.code === 'ER_DUP_ENTRY' || databaseError?.errno === 1062;
+}
+
 class PricesRepository {
-  public async $savePrices(time: number, prices: ApiPrice): Promise<void> {
+  public async $savePrices(time: number, prices: ApiPrice): Promise<boolean> {
     if (prices.USD === -1) {
       // Some historical price entries have no USD prices, so we just ignore them to avoid future UX issues
       // As of today there are only 4 (on 2013-09-05, 2013-0909, 2013-09-12 and 2013-09-26) so that's fine
-      return;
+      return false;
     }
 
     // Sanity check
@@ -182,7 +187,7 @@ class PricesRepository {
 
     try {
       if (!config.FIAT_PRICE.API_KEY) { // Store only the 7 main currencies
-          await DB.query(`
+        await DB.query(`
           INSERT INTO prices(time,             USD, EUR, GBP, CAD, CHF, AUD, JPY)
           VALUE             (FROM_UNIXTIME(?), ?,   ?,   ?,   ?,   ?,   ?,   ?  )`,
           [time, prices.USD, prices.EUR, prices.GBP, prices.CAD, prices.CHF, prices.AUD, prices.JPY]
@@ -196,7 +201,11 @@ class PricesRepository {
                 prices.PHP, prices.PLN, prices.RON, prices.RUB, prices.SEK, prices.SGD, prices.THB, prices.TRY, prices.ZAR]
         );
       }
+      return true;
     } catch (e) {
+      if (isDuplicatePriceTime(e)) {
+        return false;
+      }
       logger.err(`Cannot save exchange rate into db. Reason: ` + (e instanceof Error ? e.message : e));
       throw e;
     }

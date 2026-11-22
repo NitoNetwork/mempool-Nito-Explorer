@@ -39,7 +39,7 @@ export class DifficultyAdjustmentsTable implements OnInit {
       decimals = 5;
     }
 
-    this.hashrateObservable$ = this.apiService.getDifficultyAdjustments$('3m')
+    this.hashrateObservable$ = this.apiService.getDifficultyAdjustments$('latest')
       .pipe(
         map((response) => {
           const data = response.body;

@@ -16,7 +16,7 @@ export class RateUnitSelectorComponent implements OnInit, OnDestroy {
   rateUnitSub: Subscription;
   units = [
     { name: 'vb', label: 'nitoshi/vB' },
-    { name: 'wu', label: 'sat/WU' },
+    { name: 'wu', label: 'nitoshi/WU' },
   ];
 
   constructor(

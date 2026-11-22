@@ -5925,7 +5925,7 @@
       </trans-unit>
       <trans-unit id="9d89af322d1f011851fd136a01a988aec5691e02" datatype="html">
         <source>Number of times that the Federation's NITO holdings fall below 95% of the total LBTC supply</source>
-        <target>Antal gange Federationens BTC-beholdning falder under 95% af det samlede LBTC-udbud</target>
+        <target>Antal gange Federationens NITO-beholdning falder under 95% af det samlede LBTC-udbud</target>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/components/liquid-reserves-audit/reserves-ratio-stats/reserves-ratio-stats.component.html</context>
           <context context-type="linenumber">6</context>
@@ -8735,7 +8735,7 @@
       </trans-unit>
       <trans-unit id="9f88381443e277aca8bb50a8d0a338ab6cf2a68b" datatype="html">
         <source>LBTC Supply Against NITO Holdings</source>
-        <target>LBTC-udbud mod BTC-beholdninger</target>
+        <target>LBTC-udbud mod NITO-beholdninger</target>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/dashboard/dashboard.component.html</context>
           <context context-type="linenumber">184</context>
