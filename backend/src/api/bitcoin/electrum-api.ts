@@ -314,11 +314,13 @@ class BitcoindElectrsApi extends BitcoinApi implements AbstractBitcoinApi {
         }
         const history = await this.electrumClient.request(
           'blockchain.scripthash.get_history', [scripthash]);
-        if (!Array.isArray(history) || !history.every(entry => this.validHistoryEntry(entry, Number(entry?.height) > 0))) {
+        const isConfirmed = (entry: any): boolean => Number(entry?.height) > 0
+          || (Number(entry?.height) === 0 && entry?.fee === undefined);
+        if (!Array.isArray(history) || !history.every(entry => this.validHistoryEntry(entry, isConfirmed(entry)))) {
           throw new IndexUnavailableError('Electrum returned an invalid address history', false);
         }
-        const confirmed = history.filter(entry => Number(entry.height) > 0).reverse();
-        const unconfirmed = history.filter(entry => Number(entry.height) <= 0);
+        const confirmed = history.filter(isConfirmed).reverse();
+        const unconfirmed = history.filter(entry => !isConfirmed(entry));
         if (confirmed.length > limit) {
           throw new IndexUnavailableError('Electrum pagination support is required for this large address history', false);
         }
