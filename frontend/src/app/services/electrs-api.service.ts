@@ -209,8 +209,9 @@ export class ElectrsApiService {
     return this.httpClient.get(this.apiBaseUrl + this.apiBasePath + '/api/block/' + hash + '/txid/' + index, { responseType: 'text' });
   }
 
-  getAddress$(address: string): Observable<Address> {
-    return this.httpClient.get<Address>(this.apiBaseUrl + this.apiBasePath + '/api/address/' + address);
+  getAddress$(address: string, allowSummary = false): Observable<Address> {
+    return this.httpClient.get<Address>(this.apiBaseUrl + this.apiBasePath + '/api/address/' + address,
+      allowSummary ? { params: { summary: '1' } } : {});
   }
 
   getPubKeyAddress$(pubkey: string): Observable<Address> {

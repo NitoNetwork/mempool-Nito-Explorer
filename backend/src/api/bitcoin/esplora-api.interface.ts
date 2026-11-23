@@ -115,6 +115,8 @@ export namespace IEsploraApi {
     mempool_stats: MempoolStats;
     electrum?: boolean;
     stats_complete?: boolean;
+    balance?: { confirmed: Amount; unconfirmed: Amount };
+    indexed_height?: number;
   }
 
   export interface ScriptHash {

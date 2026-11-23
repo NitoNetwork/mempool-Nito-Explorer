@@ -52,7 +52,7 @@ jest.mock('../../api/memory-cache', () => ({ get: () => null, set: () => {} }));
 function rpc() {
   return { getBlockchainInfo: jest.fn(async () => ({ chain: 'regtest', blocks: 100, bestblockhash: 'tip', initialblockdownload: false })),
     getBlockHash: jest.fn(async height => height === 100 ? 'tip' : `block-${height}`),
-    getBlockHeader: jest.fn(async () => 'header'), validateAddress: jest.fn(async () => ({ isvalid: true, address: 'nrt1test', scriptPubKey: '00' })) };
+    getBlockHeader: jest.fn(async (_hash: string, _verbose: boolean) => 'header'), validateAddress: jest.fn(async () => ({ isvalid: true, address: 'nrt1test', scriptPubKey: '00' })) };
 }
 
 describe('Electrum index consistency', () => {
@@ -77,8 +77,8 @@ describe('Electrum index consistency', () => {
     expect(address.chain_stats.tx_count).toBe(0);
     expect(address.mempool_stats.tx_count).toBe(1);
   });
-  test('refuses a rebuilding or lagging index before reading balances', async () => {
-    mockIndex.request.mockResolvedValue({ height: 99, hex: 'header' });
+  test('refuses an index more than three blocks behind before reading balances', async () => {
+    mockIndex.request.mockResolvedValue({ height: 96, hex: 'header' });
     await expect(new ElectrumApi(rpc()).$getAddress('nrt1test')).rejects.toThrow('height mismatch');
     expect(mockIndex.blockchainScripthash_getBalance).not.toHaveBeenCalled();
   });
@@ -264,16 +264,30 @@ describe('Electrum index consistency', () => {
     expect(result.chain_stats).toMatchObject({ tx_count: 1, funded_txo_sum: '42' });
     expect(result.mempool_stats).toMatchObject({ tx_count: 1, funded_txo_sum: '7' });
   });
-  test('serves a completed exact address snapshot during a proven forward indexing lag', async () => {
+  test('serves a cold address request during a proven forward indexing lag', async () => {
     const core = rpc();
     const api = new ElectrumApi(core);
     jest.spyOn(api as any, 'transparentEffects').mockResolvedValue({ vin: [], vout: [{ scriptpubkey: '00', value: '42' }] } as any);
-    const warm = await api.$getAddress('nrt1test');
     core.getBlockchainInfo.mockResolvedValue({ chain: 'regtest', blocks: 101, bestblockhash: 'next', initialblockdownload: false });
     core.getBlockHash.mockImplementation(async height => height === 100 ? 'tip' : 'next');
-    const stale = await api.$getAddress('nrt1test');
-    expect(stale).toEqual(warm);
-    expect(stale.stats_complete).toBe(true);
+    const address = await api.$getAddress('nrt1test');
+    expect(address).toMatchObject({ indexed_height: 100, stats_complete: true, mempool_stats: { funded_txo_sum: '42' } });
+    expect(core.getBlockHash).toHaveBeenCalledWith(100);
+    expect(core.getBlockHeader).toHaveBeenCalledWith('tip', false);
+  });
+  test('returns a large address balance and transaction count without scanning its full history', async () => {
+    mockIndex.request.mockImplementation(async method => method === 'blockchain.headers.subscribe' ? indexSnapshot : {
+      confirmed: Array.from({ length: 1000 }, (_, i) => ({ tx_hash: txid(i + 100), height: 99, cursor: 108750 - i })),
+      unconfirmed: [{ tx_hash: TX, height: 0 }],
+      cursor: 107751, has_more: true, total: 108750,
+    });
+    mockIndex.blockchainScripthash_getBalance.mockResolvedValue({ confirmed: '524800437835', unconfirmed: '-42' });
+    const address = await new ElectrumApi(rpc()).$getAddress('nrt1test', true);
+    expect(address).toMatchObject({
+      stats_complete: false, balance: { confirmed: '524800437835', unconfirmed: '-42' },
+      chain_stats: { tx_count: 108750 }, mempool_stats: { tx_count: 1 },
+    });
+    expect(mockIndex.request.mock.calls.filter(([method]) => method.includes('history_page'))).toHaveLength(1);
   });
   test('does not serve a cached address snapshot when its tip is no longer active', async () => {
     const core = rpc();
@@ -282,6 +296,7 @@ describe('Electrum index consistency', () => {
     await api.$getAddress('nrt1test');
     core.getBlockchainInfo.mockResolvedValue({ chain: 'regtest', blocks: 101, bestblockhash: 'reorg-tip', initialblockdownload: false });
     core.getBlockHash.mockResolvedValue('different-active-hash');
+    core.getBlockHeader.mockImplementation(async hash => hash === 'tip' ? 'header' : 'different-header');
     await expect(api.$getAddress('nrt1test')).rejects.toBeInstanceOf(IndexUnavailableError);
   });
   test('does not serve an H snapshot once Electrum has advanced to H+1 behind Core H+2', async () => {

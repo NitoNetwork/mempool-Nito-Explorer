@@ -218,7 +218,7 @@
 </ng-template>
 
 <ng-template type="looking-up-fee-estimates">
-  <p>The <a [routerLink]="['/' | relativeUrl]">main dashboard</a> shows Nito Core's fee estimates for four confirmation targets. The explorer requests 144 blocks for No Priority, 60 for Low, 30 for Medium, and 2 for High. Each estimate shows the actual target returned by Core, which can differ from the requested target.</p>
+  <p>The <a [routerLink]="['/' | relativeUrl]">main dashboard</a> shows Nito Core's fee estimates. When the node's synchronized mempool is empty, No Priority shows the node's minimum admission rate.</p>
   <p>Several targets can have the same fee rate. If Core has insufficient data for a target, its estimate is unavailable. The separately displayed minimum is the connected node's current admission floor. Core updates its estimates as network conditions change, and a target does not guarantee confirmation within that number of blocks.</p>
 </ng-template>
 

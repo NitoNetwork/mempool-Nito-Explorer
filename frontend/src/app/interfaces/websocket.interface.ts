@@ -139,6 +139,7 @@ export interface Recommendedfees {
   minimumFee: number;
   economyFee: number | null;
   targetBlocks?: Record<'fastestFee' | 'halfHourFee' | 'hourFee' | 'economyFee', number | null>;
+  mempoolEmpty?: boolean;
 }
 
 export interface HealthCheckHost {

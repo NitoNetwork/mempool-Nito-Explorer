@@ -13,17 +13,17 @@
 
   <div class="fee-estimation-container">
     <div class="item">
-      <ng-container *ngTemplateOutlet="feeEstimate; context: { fee: recommendedFees.economyFee, blocks: recommendedFees.targetBlocks?.economyFee }"></ng-container>
+      <ng-container *ngTemplateOutlet="feeEstimate; context: { fee: recommendedFees.mempoolEmpty ? recommendedFees.minimumFee : recommendedFees.economyFee }"></ng-container>
     </div>
     <div class="band-separator"></div>
     <div class="item">
-      <ng-container *ngTemplateOutlet="feeEstimate; context: { fee: recommendedFees.hourFee, blocks: recommendedFees.targetBlocks?.hourFee }"></ng-container>
+      <ng-container *ngTemplateOutlet="feeEstimate; context: { fee: recommendedFees.hourFee }"></ng-container>
     </div>
     <div class="item">
-      <ng-container *ngTemplateOutlet="feeEstimate; context: { fee: recommendedFees.halfHourFee, blocks: recommendedFees.targetBlocks?.halfHourFee }"></ng-container>
+      <ng-container *ngTemplateOutlet="feeEstimate; context: { fee: recommendedFees.halfHourFee }"></ng-container>
     </div>
     <div class="item">
-      <ng-container *ngTemplateOutlet="feeEstimate; context: { fee: recommendedFees.fastestFee, blocks: recommendedFees.targetBlocks?.fastestFee }"></ng-container>
+      <ng-container *ngTemplateOutlet="feeEstimate; context: { fee: recommendedFees.fastestFee }"></ng-container>
     </div>
   </div>
   <p class="fee-minimum" *ngIf="recommendedFees.targetBlocks">
@@ -32,13 +32,10 @@
   </p>
 </div>
 
-<ng-template #feeEstimate let-fee="fee" let-blocks="blocks">
+<ng-template #feeEstimate let-fee="fee">
   <div class="card-text" *ngIf="fee != null; else feeUnavailable">
     <div class="fee-text"><app-fee-rate [fee]="fee" rounding="1.0-3"></app-fee-rate></div>
     <span class="fiat"><app-fiat i18n-ngbTooltip="Transaction fee tooltip" ngbTooltip="Based on average native segwit transaction of 140 vBytes" placement="bottom" [value]="fee * 140"></app-fiat></span>
-    <small class="fee-target" *ngIf="blocks"
-      i18n="@@fees-box.core-target" i18n-ngbTooltip="@@fees-box.core-target-tooltip"
-      ngbTooltip="Confirmation target reported by Nito Core. Timing is not guaranteed." placement="bottom">Core target · {{ blocks | number }} blocks</small>
   </div>
   <ng-template #feeUnavailable>
     <small class="fee-target fee-unavailable" i18n="@@fees-box.estimate-unavailable">Estimate unavailable</small>

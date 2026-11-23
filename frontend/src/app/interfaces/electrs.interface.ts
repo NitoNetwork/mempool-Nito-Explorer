@@ -161,6 +161,8 @@ export interface Block {
 export interface Address {
   electrum?: boolean;
   stats_complete?: boolean;
+  balance?: { confirmed: Nitoshi; unconfirmed: Nitoshi };
+  indexed_height?: number;
   address: string;
   chain_stats: ChainStats;
   mempool_stats: MempoolStats;

@@ -3,7 +3,7 @@
 <div class="container-xl" *ngIf="!error; else errorTemplate">
 
   <!-- Pool overview -->
-  <div *ngIf="poolStats$ | async as poolStats; else loadingMain">
+  <div *ngIf="poolStats$ | async as poolStats; else poolSummaryStatus">
     <div style="display:flex" class="mb-3">
       <img width="50" height="50" src="{{ poolStats['logo'] }}" [alt]="poolStats.pool.name"
         onError="this.onerror=null; this.src = '/resources/mining-pools/default.svg'" class="mr-3">
@@ -416,6 +416,9 @@
 </div>
 
 <!-- Main table skeleton -->
+<ng-template #poolSummaryStatus>
+  <p *ngIf="summaryError; else loadingMain" role="status" i18n="@@mining.pool-summary-unavailable">Mining pool summary unavailable</p>
+</ng-template>
 <ng-template #loadingMain>
   <div>
     <div class="mb-3" style="display:flex; position: relative">

@@ -19,6 +19,7 @@ interface RecommendedFees {
 type FeePriority = Exclude<keyof RecommendedFees, 'minimumFee'>;
 type CoreRecommendedFees = Record<FeePriority, number | null> & {
   minimumFee: number;
+  mempoolEmpty?: boolean;
   targetBlocks: Record<FeePriority, number | null>;
 };
 
@@ -77,7 +78,9 @@ class FeeApi {
           this.validUntil = Date.now() + 120_000;
         }).catch(() => { /* An explicit Core outage invalidates immediately. Otherwise the lease expires. */ });
     }
-    return Date.now() < this.validUntil ? this.nitoFees : null;
+    if (!this.nitoFees || Date.now() >= this.validUntil) { return null; }
+    const info = mempool.getMempoolInfo();
+    return { ...this.nitoFees, mempoolEmpty: mempool.isInSync() && info.loaded && info.size === 0 };
   }
   constructor() { }
 

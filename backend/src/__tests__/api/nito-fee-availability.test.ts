@@ -1,9 +1,10 @@
 import feeApi from '../../api/fee-api';
 import config from '../../config';
 import bitcoinClient from '../../api/bitcoin/bitcoin-client';
+import mempool from '../../api/mempool';
 
 jest.mock('../../api/bitcoin/bitcoin-client', () => ({ getMempoolInfo: jest.fn(), estimateSmartFee: jest.fn() }));
-jest.mock('../../api/mempool', () => ({}));
+jest.mock('../../api/mempool', () => ({ getMempoolInfo: jest.fn(), isInSync: jest.fn() }));
 jest.mock('../../api/mempool-blocks', () => ({}));
 
 const settle = () => new Promise(resolve => setImmediate(resolve));
@@ -14,6 +15,8 @@ describe('Nito recommendation availability', () => {
     config.MEMPOOL.BACKEND = 'electrum';
     jest.clearAllMocks();
     feeApi.invalidate();
+    (mempool.getMempoolInfo as jest.Mock).mockReturnValue({ size: 0, loaded: true });
+    (mempool.isInSync as jest.Mock).mockReturnValue(true);
     bitcoinClient.getMempoolInfo.mockResolvedValue(mempoolInfo);
     bitcoinClient.estimateSmartFee.mockImplementation(async target => ({ feerate: 0.00002, blocks: target }));
   });
@@ -47,10 +50,12 @@ describe('Nito recommendation availability', () => {
     feeApi.getRecommendedFee();
     await settle();
     expect(feeApi.getRecommendedFee()).toEqual({
-      economyFee: 5, hourFee: 5, halfHourFee: 5, fastestFee: 5, minimumFee: 1,
+      economyFee: 5, hourFee: 5, halfHourFee: 5, fastestFee: 5, minimumFee: 1, mempoolEmpty: true,
       targetBlocks: { economyFee: 80, hourFee: 60, halfHourFee: 30, fastestFee: 2 },
     });
     expect(feeApi.getPreciseRecommendedFee()).toEqual(feeApi.getRecommendedFee());
+    (mempool.getMempoolInfo as jest.Mock).mockReturnValue({ loaded: true, size: 1 });
+    expect(feeApi.getRecommendedFee()).toMatchObject({ mempoolEmpty: false });
   });
 
   test('publishes independent Core estimates and the admission floor when some targets are unavailable', async () => {
@@ -63,7 +68,7 @@ describe('Nito recommendation availability', () => {
     feeApi.getRecommendedFee();
     await settle();
     expect(feeApi.getRecommendedFee()).toEqual({
-      economyFee: 3.2, hourFee: null, halfHourFee: null, fastestFee: 8.025, minimumFee: 3.125,
+      economyFee: 3.2, hourFee: null, halfHourFee: null, fastestFee: 8.025, minimumFee: 3.125, mempoolEmpty: true,
       targetBlocks: { economyFee: 87, hourFee: null, halfHourFee: null, fastestFee: 2 },
     });
   });

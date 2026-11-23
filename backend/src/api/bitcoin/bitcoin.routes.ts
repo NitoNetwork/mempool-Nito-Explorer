@@ -695,7 +695,7 @@ class BitcoinRoutes {
     }
 
     try {
-      const addressData = await bitcoinApi.$getAddress(req.params.address);
+      const addressData = await bitcoinApi.$getAddress(req.params.address, req.query.summary === '1');
       res.json(addressData);
     } catch (e) {
       if (handleIndexUnavailable(req, res, e)) { return; }

@@ -25,7 +25,7 @@ class AddressStats implements ChainStats {
   spent_txo_sum: Nitoshi;
   tx_count: number;
 
-  constructor (stats: ChainStats, address: string, scriptpubkey?: string) {
+  constructor (stats: ChainStats, address: string, scriptpubkey?: string, private initialBalance: Nitoshi = '0') {
     Object.assign(this, stats);
     this.address = address;
     this.scriptpubkey = scriptpubkey;
@@ -80,7 +80,7 @@ class AddressStats implements ChainStats {
   }
 
   get balance(): Nitoshi {
-    return money.subtract(this.funded_txo_sum, this.spent_txo_sum);
+    return money.sum(this.initialBalance, money.subtract(this.funded_txo_sum, this.spent_txo_sum));
   }
 
   get totalReceived(): Nitoshi {
@@ -216,7 +216,7 @@ export class AddressComponent implements OnInit, OnDestroy {
             switchMap(() => (
               this.addressString.match(/04[a-fA-F0-9]{128}|(02|03)[a-fA-F0-9]{64}/)
               ? this.electrsApiService.getPubKeyAddress$(this.addressString)
-              : this.electrsApiService.getAddress$(this.addressString)
+              : this.electrsApiService.getAddress$(this.addressString, true)
             ).pipe(
                 catchError((err) => {
                   this.isLoadingAddress = false;
@@ -517,8 +517,8 @@ export class AddressComponent implements OnInit, OnDestroy {
   }
 
   updateChainStats(): void {
-    this.chainStats = new AddressStats(this.address.chain_stats, this.address.address);
-    this.mempoolStats = new AddressStats(this.address.mempool_stats, this.address.address);
+    this.chainStats = new AddressStats(this.address.chain_stats, this.address.address, undefined, this.address.balance?.confirmed);
+    this.mempoolStats = new AddressStats(this.address.mempool_stats, this.address.address, undefined, this.address.balance?.unconfirmed);
   }
 
   setBalancePeriod(period: 'all' | '1m'): boolean {

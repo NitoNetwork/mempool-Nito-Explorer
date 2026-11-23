@@ -432,6 +432,21 @@ class BlocksRepository {
     }
   }
 
+  /** @asyncUnsafe */
+  public async $getPoolBlockCounts(poolId: number) {
+    const [rows] = await DB.query(`
+      SELECT CAST(COUNT(*) AS DOUBLE) AS totalBlock,
+             CAST(COUNT(CASE WHEN pool_id = ? THEN 1 END) AS DOUBLE) AS blockCount,
+             CAST(COUNT(CASE WHEN blockTimestamp >= NOW() - INTERVAL 1 DAY THEN 1 END) AS DOUBLE) AS totalBlock24h,
+             CAST(COUNT(CASE WHEN blockTimestamp >= NOW() - INTERVAL 1 DAY AND pool_id = ? THEN 1 END) AS DOUBLE) AS blockCount24h,
+             CAST(COUNT(CASE WHEN blockTimestamp >= NOW() - INTERVAL 1 WEEK THEN 1 END) AS DOUBLE) AS totalBlock1w,
+             CAST(COUNT(CASE WHEN blockTimestamp >= NOW() - INTERVAL 1 WEEK AND pool_id = ? THEN 1 END) AS DOUBLE) AS blockCount1w
+      FROM blocks
+      WHERE stale = 0 AND blockTimestamp BETWEEN NOW() - INTERVAL 4 WEEK AND NOW()
+    `, [poolId, poolId, poolId]);
+    return rows[0];
+  }
+
   /**
    * Get blocks count between two dates
    * @param poolId

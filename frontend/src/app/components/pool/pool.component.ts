@@ -1,8 +1,8 @@
-import { ChangeDetectionStrategy, Component, Inject, Input, LOCALE_ID, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject, Input, LOCALE_ID, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { echarts, EChartsOption } from '@app/graphs/echarts';
 import { BehaviorSubject, Observable, Subscription, combineLatest, of } from 'rxjs';
-import { catchError, distinctUntilChanged, filter, map, share, switchMap, tap } from 'rxjs/operators';
+import { catchError, distinctUntilChanged, filter, map, share, shareReplay, switchMap, tap } from 'rxjs/operators';
 import { BlockExtended, PoolStat } from '@interfaces/node-api.interface';
 import { ApiService } from '@app/services/api.service';
 import { StateService } from '@app/services/state.service';
@@ -36,12 +36,14 @@ export class PoolComponent implements OnInit {
   formatNumber = formatNumber;
   Math = Math;
   slugSubscription: Subscription;
+  private chartSubscription: Subscription;
   poolStats$: Observable<PoolStat>;
   blocks$: Observable<BlockExtended[]>;
   oobFees$: Observable<AccelerationTotal[]>;
   job$: Observable<StratumJob | null>;
   expectedBlockTime$: Observable<number>;
   isLoading = true;
+  summaryError = false;
   error: HttpErrorResponse | null = null;
 
   chartOptions: EChartsOption = {};
@@ -58,6 +60,7 @@ export class PoolComponent implements OnInit {
 
   constructor(
     @Inject(LOCALE_ID) public locale: string,
+    private changeDetector: ChangeDetectorRef,
     private apiService: ApiService,
     private route: ActivatedRoute,
     public stateService: StateService,
@@ -72,6 +75,8 @@ export class PoolComponent implements OnInit {
   ngOnInit(): void {
     this.slugSubscription = this.route.params.pipe(map((params) => params.slug)).subscribe((slug) => {
       this.isLoading = true;
+      this.summaryError = false;
+      this.error = null;
       this.blocks = [];
       this.chartOptions = {};
       this.slug = slug;
@@ -80,33 +85,33 @@ export class PoolComponent implements OnInit {
   }
 
   initializeObservables(): void {
-    this.poolStats$ = this.apiService.getPoolHashrate$(this.slug)
+    this.chartSubscription?.unsubscribe();
+    this.chartSubscription = this.apiService.getPoolHashrate$(this.slug).pipe(
+      catchError(() => of([])),
+    ).subscribe(data => {
+      const hashrate = data.map(val => [val.timestamp * 1000, val.avgHashrate]);
+      const share = data.map(val => [val.timestamp * 1000, val.share * 100]);
+      this.prepareChartOptions(hashrate, share);
+      this.isLoading = false;
+      this.changeDetector.markForCheck();
+    });
+
+    this.poolStats$ = this.apiService.getPoolStats$(this.slug)
       .pipe(
-        switchMap((data) => {
-          this.isLoading = false;
-          const hashrate = data.map(val => [val.timestamp * 1000, val.avgHashrate]);
-          const share = data.map(val => [val.timestamp * 1000, val.share * 100]);
-          this.prepareChartOptions(hashrate, share);
-          return this.apiService.getPoolStats$(this.slug);
-        }),
         map((poolStats) => {
           this.seoService.setTitle(poolStats.pool.name);
           this.seoService.setDescription($localize`:@@meta.description.mining.pool:See mining pool stats for ${poolStats.pool.name}\: most recent mined blocks, hashrate over time, total block reward to date, known coinbase addresses, and more.`);
-          let regexes = '"';
-          for (const regex of poolStats.pool.regexes) {
-            regexes += regex + '", "';
-          }
-          poolStats.pool.regexes = regexes.slice(0, -3);
-
           return Object.assign({
             logo: `/resources/mining-pools/` + poolStats.pool.slug + '.svg'
           }, poolStats);
         }),
         catchError(() => {
-          this.isLoading = false;
+          this.summaryError = true;
           this.seoService.logSoft404();
+          this.changeDetector.markForCheck();
           return of(null);
         }),
+        shareReplay({ bufferSize: 1, refCount: true }),
       );
 
     this.blocks$ = this.loadMoreSubject
@@ -144,6 +149,7 @@ export class PoolComponent implements OnInit {
     if (this.stratumEnabled) {
       this.job$ = combineLatest([
         this.poolStats$.pipe(
+          filter(Boolean),
           tap((poolStats) => {
             this.websocketService.startTrackStratum(poolStats.pool.unique_id);
           })
@@ -157,7 +163,7 @@ export class PoolComponent implements OnInit {
 
       this.expectedBlockTime$ = combineLatest([
         this.miningService.getMiningStats('1w'),
-        this.poolStats$,
+        this.poolStats$.pipe(filter(Boolean)),
         this.stateService.difficultyAdjustment$
       ]).pipe(
         map(([miningStats, poolStat, da]) => {
@@ -365,5 +371,6 @@ export class PoolComponent implements OnInit {
 
   ngOnDestroy(): void {
     this.slugSubscription.unsubscribe();
+    this.chartSubscription?.unsubscribe();
   }
 }

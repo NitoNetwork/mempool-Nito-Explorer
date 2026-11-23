@@ -19,7 +19,7 @@ type TransparentEffects = {
 };
 type AddressContribution = { funded_txo_count: number; funded_txo_sum: string; spent_txo_count: number; spent_txo_sum: string };
 type AddressStats = { chain_stats: IEsploraApi.ChainStats; mempool_stats: IEsploraApi.MempoolStats };
-type IndexTip = { hash: string; height: number };
+type IndexTip = { hash: string; height: number; behindCore?: boolean };
 type PersistentAddressStats = AddressStats & { fingerprint: string; tip_hash: string; tip_height: number };
 type HistoryContinuation = { cursor: number; tipHash: string; tipHeight: number };
 
@@ -187,7 +187,7 @@ class BitcoindElectrsApi extends BitcoinApi implements AbstractBitcoinApi {
   }
 
   /** @asyncUnsafe */
-  private async indexTip(): Promise<IndexTip> {
+  private async indexTip(allowForwardLag: boolean): Promise<IndexTip> {
     const expected = { mainnet: 'main', testnet: 'test', signet: 'signet', regtest: 'regtest' }[config.MEMPOOL.NETWORK];
     try {
       const [core, index] = await Promise.all([
@@ -196,12 +196,15 @@ class BitcoindElectrsApi extends BitcoinApi implements AbstractBitcoinApi {
       if (!expected || core.chain !== expected || core.initialblockdownload) {
         throw new IndexUnavailableError('Core network mismatch or initial synchronization; index data unavailable', false);
       }
-      if (index.height !== core.blocks) {
+      const lag = core.blocks - index.height;
+      if (!Number.isSafeInteger(index.height) || index.height < 0
+        || (lag !== 0 && (!allowForwardLag || lag < 0 || lag > 3))) {
         throw new IndexUnavailableError('Core and ElectrumX height mismatch; index data unavailable', true, core.blocks > index.height);
       }
-      const header = await this.bitcoindClient.getBlockHeader(core.bestblockhash, false);
+      const hash = lag > 0 ? await this.bitcoindClient.getBlockHash(index.height) : core.bestblockhash;
+      const header = await this.bitcoindClient.getBlockHeader(hash, false);
       if (index.hex !== header) { throw new IndexUnavailableError('Core and ElectrumX tips differ; index data unavailable'); }
-      return { hash: core.bestblockhash, height: core.blocks };
+      return { hash, height: index.height, behindCore: lag > 0 };
     } catch (error) {
       if (error instanceof IndexUnavailableError) { throw error; }
       throw new IndexUnavailableError('Core or ElectrumX unavailable; retry', false);
@@ -234,7 +237,7 @@ class BitcoindElectrsApi extends BitcoinApi implements AbstractBitcoinApi {
   }
 
   /** @asyncUnsafe */
-  private async consistentIndexRead<T>(read: (tip: IndexTip) => Promise<T>, key: string): Promise<T> {
+  private async consistentIndexRead<T>(read: (tip: IndexTip) => Promise<T>, key: string, allowForwardLag = false): Promise<T> {
     const pending = this.pendingIndexReads.get(key);
     if (pending) { return pending as Promise<T>; }
     if (this.pendingIndexReads.size >= 128) { throw new IndexUnavailableError('Index read capacity reached; retry', false); }
@@ -242,9 +245,9 @@ class BitcoindElectrsApi extends BitcoinApi implements AbstractBitcoinApi {
     const collect = async (): Promise<T> => {
       for (let attempt = 0; ; attempt++) {
         try {
-          const before = await this.indexTip();
+          const before = await this.indexTip(allowForwardLag);
           const result = await read(before);
-          const after = await this.indexTip();
+          const after = await this.indexTip(allowForwardLag);
           if (before.hash !== after.hash) { throw new IndexUnavailableError('Chain tip changed during index read; retry'); }
           this.completedIndexReads.delete(key);
           this.completedIndexReads.set(key, { value: result, tipHash: after.hash, tipHeight: after.height, completedAt: Date.now() });
@@ -329,8 +332,8 @@ class BitcoindElectrsApi extends BitcoinApi implements AbstractBitcoinApi {
   }
 
   /** @asyncUnsafe */
-  private async fullScriptHashHistory(scripthash: string): Promise<IElectrumApi.ScriptHashHistory[]> {
-    const first = await this.historyPage(scripthash, null, 1000);
+  private async fullScriptHashHistory(scripthash: string, firstPage?: IElectrumApi.ScriptHashHistoryPage): Promise<IElectrumApi.ScriptHashHistory[]> {
+    const first = firstPage ?? await this.historyPage(scripthash, null, 1000);
     const history = [...first.unconfirmed, ...first.confirmed];
     const seenTxids = new Set(history.map(entry => entry.tx_hash));
     let page = first;
@@ -632,12 +635,16 @@ class BitcoindElectrsApi extends BitcoinApi implements AbstractBitcoinApi {
   }
 
   /** @asyncUnsafe */
-  async $getAddress(address: string): Promise<IEsploraApi.Address> {
-    return this.consistentIndexRead(tip => this.$getAddressUnchecked(address, tip), `address:${address}`);
+  async $getAddress(address: string, allowSummary = false): Promise<IEsploraApi.Address> {
+    return this.consistentIndexRead(
+      tip => this.$getAddressUnchecked(address, tip, allowSummary),
+      `address:${address}${allowSummary ? ':summary' : ''}`,
+      true,
+    );
   }
 
   /** @asyncUnsafe */
-  private async $getAddressUnchecked(address: string, tip: IndexTip): Promise<IEsploraApi.Address> {
+  private async $getAddressUnchecked(address: string, tip: IndexTip, allowSummary: boolean): Promise<IEsploraApi.Address> {
     const addressInfo = await this.bitcoindClient.validateAddress(address);
     if (!addressInfo || !addressInfo.isvalid) {
       throw new Error('Invalid Bitcoin address');
@@ -647,15 +654,33 @@ class BitcoindElectrsApi extends BitcoinApi implements AbstractBitcoinApi {
     }
 
     try {
-      const balance = await this.$getScriptHashBalance(addressInfo.scriptPubKey);
-      const history = await this.$getScriptHashHistory(addressInfo.scriptPubKey);
+      const scripthash = this.encodeScriptHash(addressInfo.scriptPubKey);
+      const [balance, page] = await Promise.all([
+        this.$getScriptHashBalance(addressInfo.scriptPubKey),
+        this.historyPage(scripthash, null, 1000),
+      ]);
+      const indexedTip = tip.behindCore ? { indexed_height: tip.height } : {};
+      // The interactive page can show the indexed balance and history immediately.
+      // Lifetime totals on very active addresses require reconstructing every previous output.
+      if (allowSummary && page.total > 25_000) {
+        if (page.confirmed.some(entry => entry.height > tip.height)) {
+          throw new IndexUnavailableError('Electrum history is ahead of its advertised tip; retry');
+        }
+        return {
+          address: addressInfo.address, electrum: true, stats_complete: false, ...indexedTip,
+          balance,
+          chain_stats: { ...this.emptyAddressStats(), tx_count: page.total },
+          mempool_stats: { ...this.emptyAddressStats(), tx_count: page.unconfirmed.length },
+        };
+      }
+      const history = await this.fullScriptHashHistory(scripthash, page);
 
-      const stats = await this.addressStats(this.encodeScriptHash(addressInfo.scriptPubKey), history, tip);
+      const stats = await this.addressStats(scripthash, history, tip);
       if (BigInt(stats.chain_stats.funded_txo_sum) - BigInt(stats.chain_stats.spent_txo_sum) !== BigInt(balance.confirmed)
         || BigInt(stats.mempool_stats.funded_txo_sum) - BigInt(stats.mempool_stats.spent_txo_sum) !== BigInt(balance.unconfirmed)) {
         throw new IndexUnavailableError('Electrum history and balance changed during address accounting; retry');
       }
-      return { address: addressInfo.address, ...stats, electrum: true, stats_complete: true };
+      return { address: addressInfo.address, ...stats, electrum: true, stats_complete: true, ...indexedTip };
     } catch (e: any) {
       throw e instanceof Error ? e : new Error(String(e));
     }
@@ -663,7 +688,7 @@ class BitcoindElectrsApi extends BitcoinApi implements AbstractBitcoinApi {
 
   /** @asyncUnsafe */
   async $getAddressTransactions(address: string, lastSeenTxId: string): Promise<IEsploraApi.Transaction[]> {
-    return this.consistentIndexRead(tip => this.$getAddressTransactionsUnchecked(address, tip, lastSeenTxId), `address-txs:${address}:${lastSeenTxId || ''}`);
+    return this.consistentIndexRead(tip => this.$getAddressTransactionsUnchecked(address, tip, lastSeenTxId), `address-txs:${address}:${lastSeenTxId || ''}`, true);
   }
 
   /** @asyncUnsafe */
@@ -681,14 +706,14 @@ class BitcoindElectrsApi extends BitcoinApi implements AbstractBitcoinApi {
     try {
       loadingIndicators.setProgress('address-' + address, 0);
 
-      const transactions: IEsploraApi.Transaction[] = [];
       const history = await this.recentScriptHashHistory(
         this.encodeScriptHash(addressInfo.scriptPubKey), tip, lastSeenTxId);
-      for (let i = 0; i < history.length; i++) {
-        const tx = await this.$getRawTransaction(history[i].tx_hash, false, true);
-        transactions.push(tx);
-        loadingIndicators.setProgress('address-' + address, (i + 1) / history.length * 100);
-      }
+      let completed = 0;
+      const transactions = await Promise.all(history.map(/** @asyncUnsafe */ async entry => {
+        const tx = await this.$getRawTransaction(entry.tx_hash, false, true);
+        loadingIndicators.setProgress('address-' + address, ++completed / history.length * 100);
+        return tx;
+      }));
       loadingIndicators.setProgress('address-' + address, 100);
       return transactions;
     } catch (e: any) {

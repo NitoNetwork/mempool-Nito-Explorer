@@ -5,8 +5,10 @@
       @if (nitoPools$ | async; as pools) {
         <div class="nito-supply-values">
           <span><small i18n="@@dashboard.pool-total-confirmed">Total</small><strong>{{ pools.total.chainValueNitoshi | nitoAmount }} NITO</strong></span>
-          <span><small i18n="@@dashboard.pool-transparent">Transparent</small><strong>{{ pools.transparent.chainValueNitoshi | nitoAmount }}</strong></span>
-          <span *ngIf="pools.orchard"><small i18n="@@dashboard.pool-orchard">Orchard</small><strong>{{ pools.orchard.chainValueNitoshi | nitoAmount }}</strong></span>
+          @if (pools.orchard) {
+            <span><small i18n="@@dashboard.pool-transparent">Transparent</small><strong>{{ pools.transparent.chainValueNitoshi | nitoAmount }}</strong></span>
+            <span><small i18n="@@dashboard.pool-orchard">Orchard</small><strong>{{ pools.orchard.chainValueNitoshi | nitoAmount }}</strong></span>
+          }
         </div>
       } @else {
         <span class="text-muted" i18n="@@dashboard.confirmed-pools-unavailable">Supply synchronizing</span>

@@ -332,12 +332,12 @@ socket.initRbfSummary().then(async () => {
   const displayedFees = render(template('components/fees-box/fees-box.component.html'), {
     stateService: socket.stateService,
     recommendedFees$: new BehaviorSubject({
-      minimumFee: 1, economyFee: 5, hourFee: null, halfHourFee: 5, fastestFee: 8.025,
+      minimumFee: 1, economyFee: 5, hourFee: null, halfHourFee: 5, fastestFee: 8.025, mempoolEmpty: true,
       targetBlocks: { economyFee: 87, hourFee: null, halfHourFee: 30, fastestFee: 2 },
     }),
   });
   assert.deepEqual(Array.from(displayedFees.nativeElement.querySelectorAll('.fee-target'), target => target.textContent.trim()),
-    ['Core target · 87 blocks', 'Estimate unavailable', 'Core target · 30 blocks', 'Core target · 2 blocks']);
+    ['Estimate unavailable']);
   assert.match(displayedFees.nativeElement.querySelector('.fee-minimum').textContent, /Minimum accepted by this node/);
   const docsTemplate = template('docs/api-docs/api-docs.component.html').split('\n').find(line => line.includes('Bech32x Orchard'));
   render(docsTemplate, { stateService: socket.stateService });
@@ -375,6 +375,7 @@ socket.initRbfSummary().then(async () => {
       }
     }
     assert.ok(poolFixture.nativeElement.textContent.includes('1,284,565,890.00000001'));
+    assert.equal(poolFixture.nativeElement.textContent.includes('Transparent'), activated);
     assert.equal(featureFixture.nativeElement.textContent.includes('Private'), !activated);
   };
   assertRendered(false);

@@ -963,7 +963,7 @@ export const restApiDocsData = [
     fragment: 'get-address',
     title: 'GET Address',
     description: {
-      default: 'Returns details about an address. Available fields: <code>address</code>, <code>chain_stats</code>, and <code>mempool_stats</code>. <code>chain_stats</code> and <code>mempool_stats</code> each contain an object with <code>tx_count</code>, <code>funded_txo_count</code>, <code>funded_txo_sum</code>, <code>spent_txo_count</code>, and <code>spent_txo_sum</code>.'
+      default: 'Returns details about an address, including transaction counts and funded and spent output totals. With <code>?summary=1</code>, ElectrumX may return <code>stats_complete: false</code> for large histories. In that case, use <code>balance.confirmed</code> and <code>balance.unconfirmed</code> in nitoshis and the transaction counts. An <code>indexed_height</code> indicates that the response uses a verified active-chain block slightly behind the node.'
     },
     urlString: '/address/:address',
     showConditions: bitcoinNetworks,
@@ -3185,7 +3185,7 @@ export const restApiDocsData = [
     fragment: 'get-recommended-fees',
     title: 'GET Recommended Fees',
     description: {
-      default: 'Returns Nito Core fee estimates for four confirmation targets in nitoshis/vB. targetBlocks reports the actual target returned by Core for each estimate. An unavailable estimate and its target are null. minimumFee is the admission floor of the connected node.'
+      default: 'Returns Nito Core fee estimates for four confirmation targets in nitoshis/vB. targetBlocks reports the actual target returned by Core for each estimate. An unavailable estimate and its target are null. minimumFee is the admission floor of the connected node. mempoolEmpty is true when the synchronized node reports zero pending transactions.'
     },
     urlString: '/v1/fees/recommended',
     showConditions: bitcoinNetworks,

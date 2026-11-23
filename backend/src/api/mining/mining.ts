@@ -189,6 +189,7 @@ class Mining {
 
   /**
    * Get all mining pool stats for a pool
+   * @asyncUnsafe
    */
   public async $getPoolStat(slug: string): Promise<object> {
     const pool = await PoolsRepository.$getPool(slug);
@@ -196,17 +197,12 @@ class Mining {
       throw new Error('This mining pool does not exist');
     }
 
-    const blockCount: number = await BlocksRepository.$blockCount(pool.id, '4w');
-    const totalBlock: number = await BlocksRepository.$blockCount(null, '4w');
-
-    const blockCount24h: number = await BlocksRepository.$blockCount(pool.id, '24h');
-    const totalBlock24h: number = await BlocksRepository.$blockCount(null, '24h');
-
-    const blockCount1w: number = await BlocksRepository.$blockCount(pool.id, '1w');
-    const totalBlock1w: number = await BlocksRepository.$blockCount(null, '1w');
-
-    const avgHealth = await BlocksRepository.$getAvgBlockHealthPerPoolId(pool.id);
-    const totalReward = await BlocksRepository.$getTotalRewardForPoolId(pool.id, '4w');
+    const [counts, avgHealth, totalReward] = await Promise.all([
+      BlocksRepository.$getPoolBlockCounts(pool.id),
+      BlocksRepository.$getAvgBlockHealthPerPoolId(pool.id),
+      BlocksRepository.$getTotalRewardForPoolId(pool.id, '4w'),
+    ]);
+    const { blockCount, totalBlock, blockCount24h, totalBlock24h, blockCount1w, totalBlock1w } = counts;
 
     let currentEstimatedHashrate = 0;
     try {
