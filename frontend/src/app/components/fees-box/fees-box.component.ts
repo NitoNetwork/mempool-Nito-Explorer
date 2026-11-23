@@ -50,7 +50,8 @@ export class FeesBoxComponent implements OnInit, OnDestroy {
     feeLevelIndex = feeLevelIndex >= 0 ? feeLevels.length - feeLevelIndex : feeLevelIndex;
     const startColor = '#' + (this.themeService.mempoolFeeColors[feeLevelIndex - 1] || this.themeService.mempoolFeeColors[this.themeService.mempoolFeeColors.length - 1]);
 
-    feeLevelIndex = feeLevels.slice().reverse().findIndex((feeLvl) => this.fees.fastestFee >= feeLvl);
+    const fastestFee = this.fees.fastestFee ?? this.fees.minimumFee;
+    feeLevelIndex = feeLevels.slice().reverse().findIndex((feeLvl) => fastestFee >= feeLvl);
     feeLevelIndex = feeLevelIndex >= 0 ? feeLevels.length - feeLevelIndex : feeLevelIndex;
     const endColor = '#' + (this.themeService.mempoolFeeColors[feeLevelIndex - 1] || this.themeService.mempoolFeeColors[this.themeService.mempoolFeeColors.length - 1]);
 

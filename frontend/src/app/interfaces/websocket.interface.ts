@@ -133,11 +133,12 @@ export interface IBackendInfo {
 }
 
 export interface Recommendedfees {
-  fastestFee: number;
-  halfHourFee: number;
-  hourFee: number;
+  fastestFee: number | null;
+  halfHourFee: number | null;
+  hourFee: number | null;
   minimumFee: number;
-  economyFee: number;
+  economyFee: number | null;
+  targetBlocks?: Record<'fastestFee' | 'halfHourFee' | 'hourFee' | 'economyFee', number | null>;
 }
 
 export interface HealthCheckHost {

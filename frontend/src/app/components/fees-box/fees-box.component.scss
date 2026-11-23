@@ -23,18 +23,8 @@
   justify-content: space-between;
   flex-direction: row;
   .item {
-    width: 100px;
-    margin: 0;
-    width: -webkit-fill-available;
-    margin: 0 auto 0px;
-    &:first-child {
-      @media (767px < width < 992px), (width < 576px) {
-        display: none
-      }
-    }
-    &:last-child {
-      margin-bottom: 0;
-    }
+    flex: 1 1 0;
+    min-width: 0;
     .card-text span {
       color: var(--transparent-fg);
       font-size: 12px;
@@ -83,14 +73,6 @@
   &.priority {
     width: 75%;
     border-radius: 0px 10px 10px 0px;
-    @media (767px < width < 992px), (width < 576px) {
-      width: 100%;
-    }
-  }
-  &:first-child {
-    @media (767px < width < 992px), (width < 576px) {
-      display: none
-    }
   }
 }
 
@@ -120,10 +102,36 @@
   white-space: nowrap;
   padding-left: 5px;
   padding-right: 5px;
-  @media (767px < width < 992px), (width < 576px) {
-    width: 33%;
-  }
   &.prority {
     width: 33%;
   }
+}
+
+.fee-target,
+.fee-minimum {
+  color: var(--transparent-fg);
+  font-size: 0.75rem;
+}
+
+.fee-target {
+  display: block;
+  line-height: 1.25;
+}
+
+.fee-unavailable {
+  padding: 0.5rem 0.15rem;
+}
+
+.fee-minimum {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  column-gap: 0.45rem;
+  margin: 0.55rem 0 0;
+}
+
+@media (767px < width < 992px), (width < 576px) {
+  .fee-progress-bar { height: auto; min-height: 22px; }
+  .fee-label { white-space: normal; padding: 2px; line-height: 1.2; }
+  .fee-estimation-container .item .fee-text { font-size: 1rem; }
 }

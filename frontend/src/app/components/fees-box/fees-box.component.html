@@ -1,40 +1,49 @@
 <div class="fee-estimation-wrapper" *ngIf="recommendedFees$ | async as recommendedFees; else loadingFees">
   <div class="d-flex">
     <div class="fee-progress-bar" [style.background]="noPriority">
-      <span class="fee-label" i18n="fees-box.no-priority" i18n-ngbTooltip="Transaction feerate tooltip (economy)" ngbTooltip="Core estimate for 144 blocks" placement="top">No Priority</span>
+      <span class="fee-label" i18n="fees-box.no-priority">No Priority</span>
     </div>
     <div class="band-separator fill"></div>
     <div class="fee-progress-bar priority" [style.background]="gradient">
-      <span class="fee-label prority" i18n="fees-box.low-priority" i18n-ngbTooltip="Transaction feerate tooltip (low priority)" ngbTooltip="Core estimate for 60 blocks" placement="top">Low Priority</span>
-      <span class="fee-label prority" i18n="fees-box.medium-priority" i18n-ngbTooltip="Transaction feerate tooltip (medium priority)" ngbTooltip="Core estimate for 30 blocks" placement="top">Medium Priority</span>
-      <span class="fee-label prority" i18n="fees-box.high-priority" i18n-ngbTooltip="Transaction feerate tooltip (high priority)" ngbTooltip="Core estimate; confirmation time is not guaranteed" placement="top">High Priority</span>
+      <span class="fee-label prority" i18n="fees-box.low-priority">Low Priority</span>
+      <span class="fee-label prority" i18n="fees-box.medium-priority">Medium Priority</span>
+      <span class="fee-label prority" i18n="fees-box.high-priority">High Priority</span>
     </div>
   </div>
 
   <div class="fee-estimation-container">
     <div class="item">
-      <div class="card-text">
-        <div class="fee-text"><app-fee-rate [fee]="recommendedFees.economyFee" [dp]="1"></app-fee-rate></div> <span class="fiat"><app-fiat i18n-ngbTooltip="Transaction fee tooltip" ngbTooltip="Based on average native segwit transaction of 140 vBytes" placement="bottom" [value]="recommendedFees.economyFee * 140" ></app-fiat></span>
-      </div>
+      <ng-container *ngTemplateOutlet="feeEstimate; context: { fee: recommendedFees.economyFee, blocks: recommendedFees.targetBlocks?.economyFee }"></ng-container>
     </div>
     <div class="band-separator"></div>
     <div class="item">
-      <div class="card-text">
-        <div class="fee-text"><app-fee-rate [fee]="recommendedFees.hourFee" [dp]="1"></app-fee-rate></div> <span class="fiat"><app-fiat i18n-ngbTooltip="Transaction fee tooltip" ngbTooltip="Based on average native segwit transaction of 140 vBytes" placement="bottom" [value]="recommendedFees.hourFee * 140" ></app-fiat></span>
-      </div>
+      <ng-container *ngTemplateOutlet="feeEstimate; context: { fee: recommendedFees.hourFee, blocks: recommendedFees.targetBlocks?.hourFee }"></ng-container>
     </div>
     <div class="item">
-      <div class="card-text">
-        <div class="fee-text"><app-fee-rate [fee]="recommendedFees.halfHourFee" [dp]="1"></app-fee-rate></div> <span class="fiat"><app-fiat i18n-ngbTooltip="Transaction fee tooltip" ngbTooltip="Based on average native segwit transaction of 140 vBytes" placement="bottom" [value]="recommendedFees.halfHourFee * 140" ></app-fiat></span>
-      </div>
+      <ng-container *ngTemplateOutlet="feeEstimate; context: { fee: recommendedFees.halfHourFee, blocks: recommendedFees.targetBlocks?.halfHourFee }"></ng-container>
     </div>
     <div class="item">
-      <div class="card-text">
-        <div class="fee-text"><app-fee-rate [fee]="recommendedFees.fastestFee" [dp]="1"></app-fee-rate></div> <span class="fiat"><app-fiat i18n-ngbTooltip="Transaction fee tooltip" ngbTooltip="Based on average native segwit transaction of 140 vBytes" placement="bottom" [value]="recommendedFees.fastestFee * 140" ></app-fiat></span>
-      </div>
+      <ng-container *ngTemplateOutlet="feeEstimate; context: { fee: recommendedFees.fastestFee, blocks: recommendedFees.targetBlocks?.fastestFee }"></ng-container>
     </div>
   </div>
+  <p class="fee-minimum" *ngIf="recommendedFees.targetBlocks">
+    <span i18n="@@fees-box.node-minimum">Minimum accepted by this node</span>
+    <app-fee-rate [fee]="recommendedFees.minimumFee" rounding="1.0-3"></app-fee-rate>
+  </p>
 </div>
+
+<ng-template #feeEstimate let-fee="fee" let-blocks="blocks">
+  <div class="card-text" *ngIf="fee != null; else feeUnavailable">
+    <div class="fee-text"><app-fee-rate [fee]="fee" rounding="1.0-3"></app-fee-rate></div>
+    <span class="fiat"><app-fiat i18n-ngbTooltip="Transaction fee tooltip" ngbTooltip="Based on average native segwit transaction of 140 vBytes" placement="bottom" [value]="fee * 140"></app-fiat></span>
+    <small class="fee-target" *ngIf="blocks"
+      i18n="@@fees-box.core-target" i18n-ngbTooltip="@@fees-box.core-target-tooltip"
+      ngbTooltip="Confirmation target reported by Nito Core. Timing is not guaranteed." placement="bottom">Core target · {{ blocks | number }} blocks</small>
+  </div>
+  <ng-template #feeUnavailable>
+    <small class="fee-target fee-unavailable" i18n="@@fees-box.estimate-unavailable">Estimate unavailable</small>
+  </ng-template>
+</ng-template>
 
 <ng-template #loadingFees>
   <p role="status">Core fee estimates unavailable or synchronizing. <span *ngIf="(stateService.orchardActivated$ | async)">Orchard fees use policy virtual size, including proof cost.</span></p>

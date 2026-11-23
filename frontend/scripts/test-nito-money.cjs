@@ -329,6 +329,16 @@ socket.initRbfSummary().then(async () => {
   const featureFixture = render(template('components/tx-features/tx-features.component.html'), features);
   const feesTemplate = template('components/fees-box/fees-box.component.html').match(/<p role="status">[\s\S]*?<\/p>/)[0];
   render(feesTemplate, { stateService: socket.stateService });
+  const displayedFees = render(template('components/fees-box/fees-box.component.html'), {
+    stateService: socket.stateService,
+    recommendedFees$: new BehaviorSubject({
+      minimumFee: 1, economyFee: 5, hourFee: null, halfHourFee: 5, fastestFee: 8.025,
+      targetBlocks: { economyFee: 87, hourFee: null, halfHourFee: 30, fastestFee: 2 },
+    }),
+  });
+  assert.deepEqual(Array.from(displayedFees.nativeElement.querySelectorAll('.fee-target'), target => target.textContent.trim()),
+    ['Core target · 87 blocks', 'Estimate unavailable', 'Core target · 30 blocks', 'Core target · 2 blocks']);
+  assert.match(displayedFees.nativeElement.querySelector('.fee-minimum').textContent, /Minimum accepted by this node/);
   const docsTemplate = template('docs/api-docs/api-docs.component.html').split('\n').find(line => line.includes('Bech32x Orchard'));
   render(docsTemplate, { stateService: socket.stateService });
   const tooltipTemplate = template('components/tx-bowtie-graph-tooltip/tx-bowtie-graph-tooltip.component.html')
@@ -355,6 +365,8 @@ socket.initRbfSummary().then(async () => {
       } else if (fixture === tooltipFixture) {
         assert.equal(/Bech32x/.test(fixture.nativeElement.textContent), activated);
         assert.equal(/Private/.test(fixture.nativeElement.textContent), !activated);
+      } else if (fixture === displayedFees) {
+        assert.doesNotMatch(fixture.nativeElement.textContent, /Orchard/);
       } else if (fixture === privacyFixture) {
         assert.doesNotMatch(fixture.nativeElement.textContent, /Orchard|Bech32x|nullifier/i);
         assert.match(fixture.nativeElement.textContent, /Private receivers and decrypted private notes/);

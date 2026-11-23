@@ -4,6 +4,7 @@ import config from '../config';
 import mempool from './mempool';
 import projectedBlocks from './mempool-blocks';
 import bitcoinClient from './bitcoin/bitcoin-client';
+import { coinToNitoshi } from './nito-values';
 
 const isLiquid = config.MEMPOOL.NETWORK === 'liquid' || config.MEMPOOL.NETWORK === 'liquidtestnet';
 
@@ -15,8 +16,28 @@ interface RecommendedFees {
   minimumFee: number,
 }
 
+type FeePriority = Exclude<keyof RecommendedFees, 'minimumFee'>;
+type CoreRecommendedFees = Record<FeePriority, number | null> & {
+  minimumFee: number;
+  targetBlocks: Record<FeePriority, number | null>;
+};
+
+const coreTargets = [
+  ['fastestFee', 2], ['halfHourFee', 30], ['hourFee', 60], ['economyFee', 144],
+] as const;
+
+function coreFeeRate(value: unknown): number | null {
+  if (typeof value !== 'string' && typeof value !== 'number') { return null; }
+  try {
+    const rate = Number(coinToNitoshi(value));
+    return Number.isSafeInteger(rate) && rate >= 0 ? rate / 1000 : null;
+  } catch {
+    return null;
+  }
+}
+
 class FeeApi {
-  private nitoFees: RecommendedFees | null = null;
+  private nitoFees: CoreRecommendedFees | null = null;
   private refreshAfter = 0;
   private validUntil = 0;
   private generation = 0;
@@ -28,40 +49,35 @@ class FeeApi {
     this.validUntil = 0;
   }
 
-  private getCoreFees(): RecommendedFees | null {
+  private getCoreFees(): CoreRecommendedFees | null {
     if (Date.now() >= this.refreshAfter) {
       this.refreshAfter = Date.now() + 30000;
       const generation = this.generation;
-      Promise.all([bitcoinClient.getMempoolInfo(), ...[2, 30, 60, 144].map(target => bitcoinClient.estimateSmartFee(target))])
-        .then(([info, fast, medium, slow, economy]) => {
-          if (generation !== this.generation) { return; }
-          const estimates = [fast, medium, slow, economy].map(result => Number(result.feerate) * 100000);
-          if (!estimates.every(rate => Number.isFinite(rate) && rate >= 0)) { return; }
-          const minimumFee = Math.max(Number(info.mempoolminfee), Number(info.minrelaytxfee ?? 0)) * 100000;
-          if (!Number.isFinite(minimumFee) || minimumFee < 0) { return; }
-          const economyFee = Math.max(minimumFee, estimates[3]);
-          const hourFee = Math.max(economyFee, estimates[2]);
-          const halfHourFee = Math.max(hourFee, estimates[1]);
-          this.nitoFees = { fastestFee: Math.max(halfHourFee, estimates[0]), halfHourFee, hourFee, economyFee, minimumFee };
+      Promise.allSettled([bitcoinClient.getMempoolInfo(), ...coreTargets.map(([, target]) => bitcoinClient.estimateSmartFee(target))])
+        .then(([mempoolInfo, ...results]) => {
+          if (generation !== this.generation || mempoolInfo.status !== 'fulfilled') { return; }
+          const admissionFee = coreFeeRate(mempoolInfo.value.mempoolminfee);
+          const relayFee = coreFeeRate(mempoolInfo.value.minrelaytxfee);
+          if (admissionFee === null || relayFee === null) { return; }
+          const fees: CoreRecommendedFees = {
+            fastestFee: null, halfHourFee: null, hourFee: null, economyFee: null,
+            minimumFee: Math.max(admissionFee, relayFee),
+            targetBlocks: { fastestFee: null, halfHourFee: null, hourFee: null, economyFee: null },
+          };
+          for (const [index, [priority]] of coreTargets.entries()) {
+            const result = results[index];
+            if (result.status !== 'fulfilled') { continue; }
+            const rate = coreFeeRate(result.value?.feerate);
+            const blocks = result.value?.blocks;
+            if (rate === null || !Number.isSafeInteger(blocks) || blocks < 1) { continue; }
+            fees[priority] = rate;
+            fees.targetBlocks[priority] = blocks;
+          }
+          this.nitoFees = fees;
           this.validUntil = Date.now() + 120_000;
         }).catch(() => { /* An explicit Core outage invalidates immediately. Otherwise the lease expires. */ });
     }
-    const estimates = this.nitoFees;
-    if (!estimates || Date.now() >= this.validUntil) { return null; }
-
-    const info = mempool.getMempoolInfo();
-    const liveFloor = Math.max(Number(info.mempoolminfee), Number(info.minrelaytxfee)) * 100000;
-    const minimumFee = Number.isFinite(liveFloor) ? Math.max(liveFloor, estimates.minimumFee) : estimates.minimumFee;
-    const [nextBlock] = projectedBlocks.getMempoolBlocks();
-    const spareCapacity = info.loaded && nextBlock && nextBlock.nTx === info.size
-      && nextBlock.blockVSize <= config.MEMPOOL.BLOCK_WEIGHT_UNITS / 8;
-    // All current transactions fit with room to spare. Low-priority sends can
-    // use a one-nitoshi margin over the live admission floor.
-    const lowPriorityCap = spareCapacity ? Math.ceil(minimumFee) + 1 : Infinity;
-    const economyFee = Math.max(minimumFee, Math.min(estimates.economyFee, lowPriorityCap));
-    const hourFee = Math.max(economyFee, Math.min(estimates.hourFee, lowPriorityCap));
-    const halfHourFee = Math.max(hourFee, estimates.halfHourFee);
-    return { minimumFee, economyFee, hourFee, halfHourFee, fastestFee: Math.max(halfHourFee, estimates.fastestFee) };
+    return Date.now() < this.validUntil ? this.nitoFees : null;
   }
   constructor() { }
 
@@ -70,7 +86,7 @@ class FeeApi {
   minHalfHourFee = isLiquid ? 0.1 : 0.5;
   priorityFactor = isLiquid ? 0 : 0.5;
 
-  public getRecommendedFee(): RecommendedFees | null {
+  public getRecommendedFee(): RecommendedFees | CoreRecommendedFees | null {
     if (config.MEMPOOL.BACKEND === 'electrum') { return this.getCoreFees(); }
     const pBlocks = projectedBlocks.getMempoolBlocks();
     const mPool = mempool.getMempoolInfo();
@@ -78,7 +94,7 @@ class FeeApi {
     return this.calculateRecommendedFee(pBlocks, mPool);
   }
 
-  public getPreciseRecommendedFee(): RecommendedFees | null {
+  public getPreciseRecommendedFee(): RecommendedFees | CoreRecommendedFees | null {
     if (config.MEMPOOL.BACKEND === 'electrum') { return this.getCoreFees(); }
     const pBlocks = projectedBlocks.getMempoolBlocks();
     const mPool = mempool.getMempoolInfo();

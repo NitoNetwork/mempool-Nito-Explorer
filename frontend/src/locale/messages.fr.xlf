@@ -11686,6 +11686,22 @@
         <source>The protocol accepts a timestamp as long as it is higher than the median of the last 11 blocks and lower than the current time + 2 hours. This is normal behavior that does not affect the security or operation of the network.</source>
         <target>Le protocole accepte un timestamp tant qu'il est superieur a la mediane des 11 derniers blocs et inferieur a l'heure actuelle + 2 heures. C'est un comportement normal qui n'affecte ni la securite ni le fonctionnement du reseau.</target>
       </trans-unit>
+      <trans-unit id="fees-box.core-target" datatype="html">
+        <source>Core target · <x id="INTERPOLATION" equiv-text="{{ blocks | number }}"/> blocks</source>
+        <target>Cible Core · <x id="INTERPOLATION" equiv-text="{{ blocks | number }}"/> blocs</target>
+      </trans-unit>
+      <trans-unit id="fees-box.core-target-tooltip" datatype="html">
+        <source>Confirmation target reported by Nito Core. Timing is not guaranteed.</source>
+        <target>Cible de confirmation indiquée par Nito Core. Le délai est indicatif.</target>
+      </trans-unit>
+      <trans-unit id="fees-box.estimate-unavailable" datatype="html">
+        <source>Estimate unavailable</source>
+        <target>Estimation indisponible</target>
+      </trans-unit>
+      <trans-unit id="fees-box.node-minimum" datatype="html">
+        <source>Minimum accepted by this node</source>
+        <target>Minimum accepté par ce nœud</target>
+      </trans-unit>
       </body>
   </file>
 </xliff>

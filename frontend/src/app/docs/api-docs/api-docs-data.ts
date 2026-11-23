@@ -3185,7 +3185,7 @@ export const restApiDocsData = [
     fragment: 'get-recommended-fees',
     title: 'GET Recommended Fees',
     description: {
-      default: 'Returns our currently suggested fees for new transactions.'
+      default: 'Returns Nito Core fee estimates for four confirmation targets in nitoshis/vB. targetBlocks reports the actual target returned by Core for each estimate. An unavailable estimate and its target are null. minimumFee is the admission floor of the connected node.'
     },
     urlString: '/v1/fees/recommended',
     showConditions: bitcoinNetworks,
@@ -3213,11 +3213,12 @@ export const restApiDocsData = [
           commonJS: [],
           curl: [],
           response: `{
-  fastestFee: 1,
-  halfHourFee: 1,
-  hourFee: 1,
-  economyFee: 1,
-  minimumFee: 1
+  "fastestFee": 5,
+  "halfHourFee": 5,
+  "hourFee": 5,
+  "economyFee": 5,
+  "minimumFee": 1,
+  "targetBlocks": { "fastestFee": 2, "halfHourFee": 30, "hourFee": 60, "economyFee": 144 }
 }`
         },
       }
@@ -3230,7 +3231,7 @@ export const restApiDocsData = [
     fragment: 'get-recommended-fees-precise',
     title: 'GET Recommended Fees (Precise)',
     description: {
-      default: 'Returns our currently-suggested feerates with up to 3 decimal places, including sub-sat feerates down to 0.1 s/vb.'
+      default: 'Returns the same Nito Core estimates as /v1/fees/recommended, with up to three decimal places in nitoshis/vB.'
     },
     urlString: '/v1/fees/precise',
     showConditions: bitcoinNetworks,
@@ -3247,11 +3248,12 @@ export const restApiDocsData = [
           commonJS: [],
           curl: [],
           response: `{
-  "fastestFee": 2.023,
-  "halfHourFee": 1.094,
-  "hourFee": 0.502,
-  "economyFee": 0.2,
-  "minimumFee": 0.1
+  "fastestFee": 8.025,
+  "halfHourFee": 4.1,
+  "hourFee": null,
+  "economyFee": 3.2,
+  "minimumFee": 3.125,
+  "targetBlocks": { "fastestFee": 2, "halfHourFee": 30, "hourFee": null, "economyFee": 87 }
 }`
         },
       }
