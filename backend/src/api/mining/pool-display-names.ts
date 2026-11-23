@@ -23,6 +23,6 @@ export function poolDisplayNames(pools: Pick<PoolInfo, 'poolId' | 'name' | 'slug
     const addressSuffix = suffix(pool.slug);
     const identifier = addressSuffix && suffixCounts.get(`${name}:${addressSuffix}`) === 1
       ? `…${addressSuffix}` : `#${pool.poolId}`;
-    return [pool.poolId, `${identifier} · ${pool.name}`];
+    return [pool.poolId, `${pool.name} · ${identifier}`];
   }));
 }

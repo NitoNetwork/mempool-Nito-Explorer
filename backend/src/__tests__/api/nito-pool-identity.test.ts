@@ -128,8 +128,8 @@ describe('trusted Nito pool identities', () => {
       { poolId: 9, name: 'Other Pool', slug: 'other-pool' },
     ]);
     expect([...labels]).toEqual([
-      [7, `…aaaaaa01 · ${name}`],
-      [8, `…aaaaaa02 · ${name}`],
+      [7, `${name} · …aaaaaa01`],
+      [8, `${name} · …aaaaaa02`],
       [9, 'Other Pool'],
     ]);
   });
