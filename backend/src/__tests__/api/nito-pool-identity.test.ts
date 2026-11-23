@@ -60,6 +60,7 @@ describe('trusted Nito pool identities', () => {
   test.each([
     ['NitroPool', 'NitroPool'],
     ['zpool', 'zpool'],
+    ['Mined with RMT Node on Umbrel', 'Mined with RMT Node on Umbrel'],
     ['mined by eu.stratum.nitopool.online worker 7', 'eu.stratum.nitopool.online'],
   ])('accepts the trusted identity %s', (label, expected) => {
     expect(blocks.$extractCoinbaseText(hex(label))).toBe(expected);
@@ -137,5 +138,16 @@ describe('trusted Nito pool identities', () => {
     const pool = await blocks.$findBlockMiner(coinbase('Mined with RMT Node on Umbrel'), 1111003, false);
     expect(pool.slug).toBe('unknown');
     expect(poolsRepository.$autoRegisterPool).not.toHaveBeenCalled();
+  });
+
+  test('uses the mining reward address for a node with a shared software fee output', async () => {
+    const name = 'Mined with RMT Node on Umbrel';
+    const tx = coinbase(name);
+    tx.vout.push({ scriptpubkey_address: 'shared-software-fee', scriptpubkey_type: 'p2pkh', value: '5000' });
+    await blocks.$findBlockMiner(tx, 1111004);
+    expect(poolsRepository.$getPoolByAddress).toHaveBeenCalledWith(payoutAddress);
+    expect(poolsRepository.$autoRegisterPool).toHaveBeenCalledWith(
+      name, 'mined-with-rmt-node-on-umbrel_xsm8x2an', [payoutAddress], name,
+    );
   });
 });

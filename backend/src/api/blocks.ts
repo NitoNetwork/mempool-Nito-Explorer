@@ -43,6 +43,7 @@ import { reconstructBlockAmounts } from '../repositories/nito-block-amounts';
 
 const TRUSTED_POOL_DOMAIN = /\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}\b/i;
 const TRUSTED_POOL_MARKER = /\b(?:NitroPool|NitoPool|zpool|ckpool|Miningcore|Mining4People|koinium|yiimp)\b/i;
+const NODE_MINING_SOFTWARE_MARKER = /\bMined with (?:RMT|RTS) Node on (?:Umbrel|ZimaOS)\b/i;
 
 class Blocks {
   private blocks: BlockExtended[] = [];
@@ -483,7 +484,7 @@ class Blocks {
       // pool identity. Arbitrary printable coinbase messages remain available
       // in coinbaseSignatureAscii, but must never rename or create a pool.
       for (const frag of fragments) {
-        const markerMatch = frag.match(TRUSTED_POOL_MARKER);
+        const markerMatch = frag.match(NODE_MINING_SOFTWARE_MARKER) ?? frag.match(TRUSTED_POOL_MARKER);
         if (markerMatch) {
           return markerMatch[0];
         }
@@ -576,15 +577,15 @@ class Blocks {
     }
 
     const addresses = txMinerInfo.vout.map((vout) => vout.scriptpubkey_address).filter(address => address) as string[];
+    const coinbaseHex = txMinerInfo.vin[0].scriptsig;
+    const minerName = this.$extractCoinbaseText(coinbaseHex);
+    const soloNode = !!minerName && NODE_MINING_SOFTWARE_MARKER.test(minerName);
 
     // Detect miner address first. In DB mode the address is the stable identity,
     // while the coinbase text is only the latest display label.
     const addrInfo = this.$detectMinerAddress(txMinerInfo.vout);
-    const poolAddress = addrInfo ? (addrInfo.isDirectPay ? addrInfo.feeAddress : addrInfo.minerAddress) : '';
+    const poolAddress = addrInfo ? (addrInfo.isDirectPay && !soloNode ? addrInfo.feeAddress : addrInfo.minerAddress) : '';
     const addrSuffix = poolAddress ? this.$addrSuffix(poolAddress) : '';
-
-    const coinbaseHex = txMinerInfo.vin[0].scriptsig;
-    const minerName = this.$extractCoinbaseText(coinbaseHex);
 
     if (poolAddress && config.DATABASE.ENABLED === true) {
       // Look up existing pool by address
@@ -602,7 +603,8 @@ class Blocks {
           }
         } else if (!minerName) {
           const fallbackName = this.$shortenAddress(poolAddress);
-          const existingNameIsTrusted = TRUSTED_POOL_DOMAIN.test(existingPool.name) || TRUSTED_POOL_MARKER.test(existingPool.name);
+          const existingNameIsTrusted = TRUSTED_POOL_DOMAIN.test(existingPool.name)
+            || TRUSTED_POOL_MARKER.test(existingPool.name) || NODE_MINING_SOFTWARE_MARKER.test(existingPool.name);
 
           // Repair names that older versions auto-registered from arbitrary
           // coinbase prose. Curated pools and already-trusted names are kept.
@@ -635,6 +637,11 @@ class Blocks {
       if (newPool) {
         return newPool;
       }
+    }
+
+    // A shared software marker does not identify a miner without its payout.
+    if (soloNode) {
+      return config.DATABASE.ENABLED ? await poolsRepository.$getUnknownPool() : poolsParser.unknownPool;
     }
 
     // Fallback: match static/regex pools only after the dynamic DB address path.
