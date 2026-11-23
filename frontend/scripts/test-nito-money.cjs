@@ -303,9 +303,12 @@ socket.initRbfSummary().then(async () => {
   const fixtures = [];
   class RelativeUrlHarnessPipe { transform(value) { return value; } }
   Pipe({ name: 'relativeUrl', standalone: true })(RelativeUrlHarnessPipe);
+  const { NitoAmountPipe } = load('src/app/shared/pipes/nito-amount.pipe.ts');
+  class NitoAmountHarnessPipe extends NitoAmountPipe { constructor() { super('en-US'); } }
+  Pipe({ name: 'nitoAmount', standalone: true })(NitoAmountHarnessPipe);
   const render = (source, context) => {
     class Harness { constructor() { Object.assign(this, context); } }
-    Component({ selector: 'test-activation-view-' + fixtures.length, standalone: true, imports: [CommonModule, RelativeUrlHarnessPipe],
+    Component({ selector: 'test-activation-view-' + fixtures.length, standalone: true, imports: [CommonModule, RelativeUrlHarnessPipe, NitoAmountHarnessPipe],
       schemas: [NO_ERRORS_SCHEMA], template: source })(Harness);
     const fixture = TestBed.createComponent(Harness);
     fixture.detectChanges();
@@ -313,8 +316,8 @@ socket.initRbfSummary().then(async () => {
     return fixture;
   };
   const poolTemplate = template('dashboard/dashboard.component.html').match(/<section[\s\S]*?<\/section>/)[0];
-  const inactivePublicPools = { transparent: { chainValue: '1284565890.00000000' },
-    total: { chainValue: '1284565890.00000000' }, blocks: 100, chain: 'regtest' };
+  const inactivePublicPools = { transparent: { chainValueNitoshi: '128456589000000001' },
+    total: { chainValueNitoshi: '128456589000000001' }, blocks: 100, chain: 'regtest' };
   const publicPools$ = new BehaviorSubject(inactivePublicPools);
   const poolFixture = render(poolTemplate, { stateService: socket.stateService, nitoPools$: publicPools$ });
   assert.match(poolFixture.nativeElement.querySelector('.nito-price-link')?.textContent || '', /Current NITO\/Price history/);
@@ -359,12 +362,12 @@ socket.initRbfSummary().then(async () => {
         assert.equal(/Orchard/.test(fixture.nativeElement.textContent), activated, fixture.componentRef.componentType.name);
       }
     }
-    assert.ok(poolFixture.nativeElement.textContent.includes('1284565890.00000000'));
+    assert.ok(poolFixture.nativeElement.textContent.includes('1,284,565,890.00000001'));
     assert.equal(featureFixture.nativeElement.textContent.includes('Private'), !activated);
   };
   assertRendered(false);
   socket.handleResponse({ nitoActivation: coreActive });
-  publicPools$.next({ ...inactivePublicPools, orchard: { chainValue: '0.00000000' } });
+  publicPools$.next({ ...inactivePublicPools, orchard: { chainValueNitoshi: '0' } });
   assertRendered(true);
   tips.next([{ id: 'cd'.repeat(32), height: 99 }]);
   publicPools$.next(inactivePublicPools);

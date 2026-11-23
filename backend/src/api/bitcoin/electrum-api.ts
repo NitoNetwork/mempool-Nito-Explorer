@@ -12,7 +12,11 @@ import { PRIVATE_ADDRESS_ERROR } from '../nito-errors';
 import { IndexUnavailableError } from './index-unavailable-error';
 import DB from '../../database';
 
-type TransparentEffects = { vin: { txid: string; vout: number; is_coinbase: boolean }[]; vout: { scriptpubkey: string; value: string }[] };
+type TransparentOutput = { scriptpubkey: string; value: string };
+type TransparentEffects = {
+  vin: { txid: string; vout: number; is_coinbase: boolean; prevout?: TransparentOutput }[];
+  vout: TransparentOutput[];
+};
 type AddressContribution = { funded_txo_count: number; funded_txo_sum: string; spent_txo_count: number; spent_txo_sum: string };
 type AddressStats = { chain_stats: IEsploraApi.ChainStats; mempool_stats: IEsploraApi.MempoolStats };
 type IndexTip = { hash: string; height: number };
@@ -95,7 +99,7 @@ class BitcoindElectrsApi extends BitcoinApi implements AbstractBitcoinApi {
       const [rows]: any = await DB.query(
         `SELECT tx_num, tip_hash, tip_height FROM address_history_cursors
           WHERE scripthash = ? AND txid = ? AND updated_at >= CURRENT_TIMESTAMP - INTERVAL 30 DAY`,
-        [scripthash, txid], 'silent');
+        [this.historyCursorKey(scripthash), txid], 'silent');
       if (!rows?.length || typeof rows[0].tip_hash !== 'string' || !/^[0-9a-f]{64}$/i.test(rows[0].tip_hash)) { return null; }
       const cursor = typeof rows[0].tx_num === 'string' && /^\d+$/.test(rows[0].tx_num)
         ? Number(rows[0].tx_num) : rows[0].tx_num;
@@ -107,6 +111,11 @@ class BitcoindElectrsApi extends BitcoinApi implements AbstractBitcoinApi {
       logger.warn(`Cannot read persistent address history cursor: ${error instanceof Error ? error.message : error}`);
       return null;
     }
+  }
+
+  private historyCursorKey(scripthash: string): string {
+    // The legacy fallback cached per-address positions, not ElectrumX tx_nums.
+    return crypto.SHA256('electrumx-tx-num:' + scripthash).toString();
   }
 
   private async savePersistentHistoryContinuations(
@@ -122,7 +131,8 @@ class BitcoindElectrsApi extends BitcoinApi implements AbstractBitcoinApi {
     if (!confirmed.length) { return; }
     try {
       const placeholders = confirmed.map(() => '(?, ?, ?, ?, ?)').join(', ');
-      const values = confirmed.flatMap(({ entry, cursor }) => [scripthash, entry.tx_hash, cursor, tip.hash, tip.height]);
+      const key = this.historyCursorKey(scripthash);
+      const values = confirmed.flatMap(({ entry, cursor }) => [key, entry.tx_hash, cursor, tip.hash, tip.height]);
       await DB.query(`INSERT INTO address_history_cursors
         (scripthash, txid, tx_num, tip_hash, tip_height) VALUES ${placeholders}
         ON DUPLICATE KEY UPDATE tx_num = VALUES(tx_num), tip_hash = VALUES(tip_hash),
@@ -309,22 +319,10 @@ class BitcoindElectrsApi extends BitcoinApi implements AbstractBitcoinApi {
     } catch (error: any) {
       const message = String(error?.message || error).toLowerCase();
       if (message.includes('unknown method') || message.includes('method not found')) {
-        const history = await this.electrumClient.request(
-          'blockchain.scripthash.get_history', [scripthash]);
-        const isConfirmed = (entry: any): boolean => Number(entry?.height) > 0
-          || (Number(entry?.height) === 0 && entry?.fee === undefined);
-        const normalized = Array.isArray(history) ? history.map((entry, index) =>
-          isConfirmed(entry) ? { ...entry, cursor: index } : entry) : [];
-        if (!Array.isArray(history) || !normalized.every(entry => this.validHistoryEntry(entry, isConfirmed(entry)))) {
-          throw new IndexUnavailableError('Electrum returned an invalid address history', false);
-        }
-        const confirmed = normalized.filter(isConfirmed).reverse();
-        const remaining = cursor === null ? confirmed : confirmed.filter(entry => entry.cursor! < cursor);
-        const page = remaining.slice(0, limit);
-        const has_more = remaining.length > page.length;
-        const unconfirmed = cursor === null ? normalized.filter(entry => !isConfirmed(entry)) : [];
-        return { confirmed: page, unconfirmed, has_more,
-          cursor: has_more ? page[page.length - 1].cursor! : null, total: confirmed.length };
+        throw new IndexUnavailableError('Electrum pagination support is required for exact address history', false);
+      }
+      if (message.includes('history changed while reading page')) {
+        throw new IndexUnavailableError('Electrum history changed during pagination; retry');
       }
       throw error;
     }
@@ -466,7 +464,7 @@ class BitcoindElectrsApi extends BitcoinApi implements AbstractBitcoinApi {
   }
 
   /** @asyncUnsafe */
-  private async transparentEffects(txid: string): Promise<TransparentEffects> {
+  private async transparentEffects(txid: string, genesis = false): Promise<TransparentEffects> {
     const cached = this.effectsCache.get(txid);
     if (cached) {
       this.effectsCache.delete(txid); this.effectsCache.set(txid, cached);
@@ -476,11 +474,22 @@ class BitcoindElectrsApi extends BitcoinApi implements AbstractBitcoinApi {
     if (pending) { return pending; }
     /** @asyncUnsafe */
     const fetch = async () => {
-      const tx = await this.bitcoindClient.getRawTransaction(txid, true);
+      let tx;
+      if (genesis) {
+        const blockHash = await this.bitcoindClient.getBlockHash(0);
+        const block = await this.bitcoindClient.getBlock(blockHash, 2);
+        tx = block.tx[0];
+      } else {
+        tx = await this.bitcoindClient.getRawTransaction(txid, 2);
+      }
       if (tx.txid !== txid) { throw new Error('Core returned a different transaction'); }
+      const output = (vout: any): TransparentOutput => ({
+        scriptpubkey: vout.scriptPubKey.hex, value: transactionNitoshi(vout.value),
+      });
       const effects: TransparentEffects = {
-        vin: tx.vin.map(input => ({ txid: input.txid, vout: input.vout, is_coinbase: !!input.coinbase })),
-        vout: tx.vout.map(output => ({ scriptpubkey: output.scriptPubKey.hex, value: transactionNitoshi(output.value) })),
+        vin: tx.vin.map(input => ({ txid: input.txid, vout: input.vout, is_coinbase: !!input.coinbase,
+          prevout: input.prevout ? output(input.prevout) : undefined })),
+        vout: tx.vout.map(output),
       };
       const bytes = Buffer.byteLength(JSON.stringify(effects));
       // Immutable public effects only: no proofs, witnesses or mutable status.
@@ -516,7 +525,7 @@ class BitcoindElectrsApi extends BitcoinApi implements AbstractBitcoinApi {
         let contribution = this.addressContributions.get(contributionKey);
         if (!contribution) {
           contribution = { funded_txo_count: 0, funded_txo_sum: '0', spent_txo_count: 0, spent_txo_sum: '0' };
-          const tx = await this.transparentEffects(entry.tx_hash);
+          const tx = await this.transparentEffects(entry.tx_hash, entry.height === 0 && entry.cursor !== undefined);
           for (const output of tx.vout) {
             if (this.encodeScriptHash(output.scriptpubkey) === scripthash) {
               contribution.funded_txo_count++;
@@ -525,7 +534,7 @@ class BitcoindElectrsApi extends BitcoinApi implements AbstractBitcoinApi {
           }
           for (const input of tx.vin) {
             if (input.is_coinbase) { continue; }
-            const prevout = (await this.transparentEffects(input.txid)).vout[input.vout];
+            const prevout = input.prevout ?? (await this.transparentEffects(input.txid)).vout[input.vout];
             if (!prevout) { throw new Error('Missing transparent prevout for address accounting'); }
             if (this.encodeScriptHash(prevout.scriptpubkey) === scripthash) {
               contribution.spent_txo_count++;

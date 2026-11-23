@@ -42,7 +42,7 @@
 
   span { display: flex; flex-direction: column; min-width: 0; }
   small { color: var(--transparent-fg); line-height: 1.1; }
-  strong { overflow-wrap: anywhere; font-size: 0.88rem; }
+  strong { overflow-wrap: anywhere; font-size: 0.88rem; font-variant-numeric: tabular-nums; }
 }
 
 .nito-supply-price { flex: 0 0 auto; }

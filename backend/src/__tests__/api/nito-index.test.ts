@@ -316,7 +316,7 @@ describe('Electrum index consistency', () => {
     const result = await api.$getAddress('nrt1test');
     expect(result.chain_stats).toMatchObject({ tx_count: 2, funded_txo_sum: '43' });
     expect(effects).toHaveBeenCalledTimes(1);
-    expect(effects).toHaveBeenCalledWith(SELF);
+    expect(effects).toHaveBeenCalledWith(SELF, false);
   });
   test('recalculates mutable mempool stats while reusing persisted confirmed stats', async () => {
     const tip100 = 'aa'.repeat(32);
@@ -340,7 +340,7 @@ describe('Electrum index consistency', () => {
     expect(result.chain_stats.funded_txo_sum).toBe('42');
     expect(result.mempool_stats).toMatchObject({ tx_count: 1, funded_txo_sum: '7' });
     expect(effects).toHaveBeenCalledTimes(1);
-    expect(effects).toHaveBeenCalledWith(SELF);
+    expect(effects).toHaveBeenCalledWith(SELF, false);
   });
   test('rejects persisted-prefix reuse after a reorg and performs a full exact scan', async () => {
     const oldTip100 = 'aa'.repeat(32), active100 = 'cc'.repeat(32), tip101 = 'bb'.repeat(32);

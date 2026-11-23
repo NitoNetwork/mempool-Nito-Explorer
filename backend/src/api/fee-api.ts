@@ -18,31 +18,50 @@ interface RecommendedFees {
 class FeeApi {
   private nitoFees: RecommendedFees | null = null;
   private refreshAfter = 0;
+  private validUntil = 0;
   private generation = 0;
 
   public invalidate(): void {
     this.generation++;
     this.nitoFees = null;
     this.refreshAfter = 0;
+    this.validUntil = 0;
   }
 
   private getCoreFees(): RecommendedFees | null {
     if (Date.now() >= this.refreshAfter) {
       this.refreshAfter = Date.now() + 30000;
-      this.nitoFees = null;
       const generation = this.generation;
       Promise.all([bitcoinClient.getMempoolInfo(), ...[2, 30, 60, 144].map(target => bitcoinClient.estimateSmartFee(target))])
         .then(([info, fast, medium, slow, economy]) => {
           if (generation !== this.generation) { return; }
           const estimates = [fast, medium, slow, economy].map(result => Number(result.feerate) * 100000);
           if (!estimates.every(rate => Number.isFinite(rate) && rate >= 0)) { return; }
-          const minimumFee = Number(info.mempoolminfee) * 100000;
+          const minimumFee = Math.max(Number(info.mempoolminfee), Number(info.minrelaytxfee ?? 0)) * 100000;
           if (!Number.isFinite(minimumFee) || minimumFee < 0) { return; }
-          this.nitoFees = { fastestFee: Math.max(minimumFee, estimates[0]), halfHourFee: Math.max(minimumFee, estimates[1]),
-            hourFee: Math.max(minimumFee, estimates[2]), economyFee: Math.max(minimumFee, estimates[3]), minimumFee };
-        }).catch(() => { if (generation === this.generation) { this.nitoFees = null; } });
+          const economyFee = Math.max(minimumFee, estimates[3]);
+          const hourFee = Math.max(economyFee, estimates[2]);
+          const halfHourFee = Math.max(hourFee, estimates[1]);
+          this.nitoFees = { fastestFee: Math.max(halfHourFee, estimates[0]), halfHourFee, hourFee, economyFee, minimumFee };
+          this.validUntil = Date.now() + 120_000;
+        }).catch(() => { /* An explicit Core outage invalidates immediately. Otherwise the lease expires. */ });
     }
-    return this.nitoFees;
+    const estimates = this.nitoFees;
+    if (!estimates || Date.now() >= this.validUntil) { return null; }
+
+    const info = mempool.getMempoolInfo();
+    const liveFloor = Math.max(Number(info.mempoolminfee), Number(info.minrelaytxfee)) * 100000;
+    const minimumFee = Number.isFinite(liveFloor) ? Math.max(liveFloor, estimates.minimumFee) : estimates.minimumFee;
+    const [nextBlock] = projectedBlocks.getMempoolBlocks();
+    const spareCapacity = info.loaded && nextBlock && nextBlock.nTx === info.size
+      && nextBlock.blockVSize <= config.MEMPOOL.BLOCK_WEIGHT_UNITS / 8;
+    // All current transactions fit with room to spare. Low-priority sends can
+    // use a one-nitoshi margin over the live admission floor.
+    const lowPriorityCap = spareCapacity ? Math.ceil(minimumFee) + 1 : Infinity;
+    const economyFee = Math.max(minimumFee, Math.min(estimates.economyFee, lowPriorityCap));
+    const hourFee = Math.max(economyFee, Math.min(estimates.hourFee, lowPriorityCap));
+    const halfHourFee = Math.max(hourFee, estimates.halfHourFee);
+    return { minimumFee, economyFee, hourFee, halfHourFee, fastestFee: Math.max(halfHourFee, estimates.fastestFee) };
   }
   constructor() { }
 

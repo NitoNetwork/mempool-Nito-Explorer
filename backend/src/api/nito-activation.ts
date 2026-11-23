@@ -102,12 +102,18 @@ export class NitoActivation {
     const generation = this.generation;
     const work = (async () => {
       try {
-        const raw = await this.rpc.getBlockchainInfo();
-        if (generation !== this.generation) { return this.snapshot(); }
-        const info = checkedActivationInfo(raw, this.network);
-        const tip = await this.rpc.getBestBlockHash();
-        if (generation !== this.generation) { return this.snapshot(); }
-        if (tip !== info.bestblockhash) { throw new InvalidActivation('chain-changed'); }
+        let info: NitoCoreChainInfo | undefined;
+        // Core can mine or receive a block between the two reads. Retry once
+        // before clearing the last confirmed display for a moving tip.
+        for (let attempt = 0; attempt < 2; attempt++) {
+          const raw = await this.rpc.getBlockchainInfo();
+          if (generation !== this.generation) { return this.snapshot(); }
+          const candidate = checkedActivationInfo(raw, this.network);
+          const tip = await this.rpc.getBestBlockHash();
+          if (generation !== this.generation) { return this.snapshot(); }
+          if (tip === candidate.bestblockhash) { info = candidate; break; }
+        }
+        if (!info) { throw new InvalidActivation('chain-changed'); }
         this.chainInfo = info; this.checkedAt = Date.now();
         clearTimeout(this.expiry);
         this.expiry = setTimeout(() => this.invalidate('stale'), this.maxAgeMs);

@@ -1271,6 +1271,34 @@ class ElectrumX(SessionBase):
         hashX = scripthash_to_hashX(scripthash)
         return await self.confirmed_and_unconfirmed_history(hashX)
 
+    async def nito_scripthash_get_history_page(self, scripthash, cursor=None, limit=1000):
+        '''Return an exact, bounded Nito address-history page.'''
+        if cursor is not None and (type(cursor) is not int or cursor < 0):
+            raise RPCError(BAD_REQUEST, 'cursor must be a non-negative integer or null')
+        if type(limit) is not int or limit < 1 or limit > 1000:
+            raise RPCError(BAD_REQUEST, 'limit must be between 1 and 1000')
+        hashX = scripthash_to_hashX(scripthash)
+        # Charge for scanning the history even if it changes during the request.
+        self.bump_cost(1.0)
+        page = await self.session_mgr.db.history_page(
+            hashX, cursor=cursor, limit=limit)
+        if page is None:
+            raise RPCError(BAD_REQUEST, 'history changed while reading page; retry')
+        rows, total, has_more = page
+        self.bump_cost(total / 10000 + len(rows) / 200)
+        confirmed = [
+            {'tx_hash': hash_to_hex_str(tx_hash), 'height': height, 'cursor': tx_num}
+            for tx_hash, height, tx_num in rows
+        ]
+        unconfirmed = await self.unconfirmed_history(hashX) if cursor is None else []
+        return {
+            'confirmed': confirmed,
+            'unconfirmed': unconfirmed,
+            'cursor': rows[-1][2] if has_more and rows else None,
+            'has_more': has_more,
+            'total': total,
+        }
+
     async def scripthash_get_mempool(self, scripthash):
         '''Return the mempool transactions touching a scripthash.'''
         hashX = scripthash_to_hashX(scripthash)
@@ -1742,6 +1770,7 @@ class ElectrumX(SessionBase):
             'blockchain.relayfee': self.relayfee,
             'blockchain.scripthash.get_balance': self.scripthash_get_balance,
             'blockchain.scripthash.get_history': self.scripthash_get_history,
+            'blockchain.nito.scripthash.get_history_page': self.nito_scripthash_get_history_page,
             'blockchain.scripthash.get_mempool': self.scripthash_get_mempool,
             'blockchain.scripthash.listunspent': self.scripthash_listunspent,
             'blockchain.scripthash.subscribe': self.scripthash_subscribe,

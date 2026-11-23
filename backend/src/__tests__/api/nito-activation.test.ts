@@ -90,9 +90,16 @@ describe('Core-authoritative Orchard activation', () => {
     expect(rpc.getBlockchainInfo).toHaveBeenCalledTimes(1);
   });
 
-  test('rejects a tip changed during collection', async () => {
+  test('retries a transient tip race during collection', async () => {
     const { service, rpc } = tracked();
     rpc.getBestBlockHash.mockResolvedValueOnce('f'.repeat(64));
+    expect(await service.refresh()).toMatchObject({ status: 'active', activated: true });
+    expect(rpc.getBlockchainInfo).toHaveBeenCalledTimes(2);
+  });
+
+  test('rejects a tip that remains inconsistent after retry', async () => {
+    const { service, rpc } = tracked();
+    rpc.getBestBlockHash.mockResolvedValue('f'.repeat(64));
     expect(await service.refresh()).toMatchObject({ status: 'unknown', activated: null, reason: 'chain-changed' });
   });
 

@@ -15,6 +15,7 @@ import os
 import time
 from threading import RLock
 from bisect import bisect_right
+from collections import deque
 from dataclasses import dataclass
 from glob import glob
 from typing import Dict, List, Sequence, Tuple, Optional, TYPE_CHECKING
@@ -741,6 +742,31 @@ class DB:
             self.logger.warning(f'limited_history: tx hash '
                                 f'not found (reorg?), retrying...')
             await sleep(0.25)
+
+    async def history_page(self, hashX, *, cursor=None, limit=1000):
+        '''Return newest-first confirmed history with stable tx_num cursors.'''
+        def read_history_page():
+            tip, tx_count = self.db_tip, self.db_tx_count
+            selected = deque(maxlen=limit + 1)
+            total = 0
+            for tx_num in self.history.get_txnums(hashX, None):
+                if tx_num >= tx_count:
+                    break
+                total += 1
+                if cursor is None or tx_num < cursor:
+                    selected.append(tx_num)
+            has_more = len(selected) > limit
+            rows = []
+            while selected and len(rows) < limit:
+                tx_num = selected.pop()
+                tx_hash, height = self.fs_tx_hash(tx_num)
+                if not tx_hash or len(tx_hash) != 32:
+                    return None
+                rows.append((tx_hash, height, tx_num))
+            if tip == self.db_tip and tx_count == self.db_tx_count:
+                return rows, total, has_more
+
+        return await run_in_thread(read_history_page)
 
     # -- Undo information
 

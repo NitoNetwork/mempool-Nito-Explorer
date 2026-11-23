@@ -1,9 +1,9 @@
 import { Component, OnInit, ChangeDetectionStrategy, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { StateService } from '@app/services/state.service';
-import { Observable, combineLatest, Subscription } from 'rxjs';
+import { Observable, Subscription } from 'rxjs';
 import { Recommendedfees } from '@interfaces/websocket.interface';
 import { feeLevels } from '@app/app.constants';
-import { map, startWith, tap } from 'rxjs/operators';
+import { tap } from 'rxjs/operators';
 import { ThemeService } from '@app/services/theme.service';
 
 @Component({
@@ -14,7 +14,6 @@ import { ThemeService } from '@app/services/theme.service';
   standalone: false,
 })
 export class FeesBoxComponent implements OnInit, OnDestroy {
-  isLoading$: Observable<boolean>;
   recommendedFees$: Observable<Recommendedfees | null>;
   themeStateSubscription: Subscription;
   gradient = 'linear-gradient(to right, var(--skeleton-bg), var(--skeleton-bg))';
@@ -28,12 +27,6 @@ export class FeesBoxComponent implements OnInit, OnDestroy {
   ) { }
 
   ngOnInit(): void {
-    this.isLoading$ = combineLatest(
-      this.stateService.isLoadingWebSocket$.pipe(startWith(false)),
-      this.stateService.loadingIndicators$.pipe(startWith({ mempool: 0 })),
-    ).pipe(map(([socket, indicators]) => {
-      return socket || (indicators.mempool != null && indicators.mempool !== 100);
-    }));
     this.recommendedFees$ = this.stateService.recommendedFees$
       .pipe(
         tap((fees) => {
