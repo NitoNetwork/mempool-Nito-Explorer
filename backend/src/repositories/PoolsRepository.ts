@@ -57,7 +57,7 @@ class PoolsRepository {
     }
 
     query += ` GROUP BY pool_id
-      ORDER BY COUNT(blocks.height) DESC`;
+      ORDER BY COUNT(blocks.height) DESC, pool_id`;
 
     try {
       const [rows] = await DB.query(query);

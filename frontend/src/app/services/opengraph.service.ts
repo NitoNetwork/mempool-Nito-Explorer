@@ -12,6 +12,9 @@ import { LanguageService } from '@app/services/language.service';
 export class OpenGraphService {
   network = '';
   defaultImageUrl = '';
+  private readonly defaultImageWidth: string;
+  private readonly defaultImageHeight: string;
+  private readonly isNitoPreview: boolean;
   previewLoadingEvents = {}; // pending count per event type
   previewLoadingCount = 0; // number of unique events pending
   sessionId = 1;
@@ -26,7 +29,10 @@ export class OpenGraphService {
   ) {
     // save og:image tag from original template
     const initialOgImageTag = metaService.getTag('property=\'og:image\'');
-    this.defaultImageUrl = initialOgImageTag?.content || '/resources/previews/nito-explorer-preview.png';
+    this.defaultImageUrl = initialOgImageTag?.content || '/resources/previews/nito-explorer-preview.png?v=2';
+    this.isNitoPreview = this.defaultImageUrl.includes('/resources/previews/nito-explorer-preview.png');
+    this.defaultImageWidth = metaService.getTag('property=\'og:image:width\'')?.content || '1024';
+    this.defaultImageHeight = metaService.getTag('property=\'og:image:height\'')?.content || '1024';
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd),
       map(() => this.activatedRoute),
@@ -62,11 +68,15 @@ export class OpenGraphService {
   clearOgImage() {
     this.metaService.updateTag({ property: 'og:image', content: this.defaultImageUrl });
     this.metaService.updateTag({ name: 'twitter:image', content: this.defaultImageUrl });
-    this.metaService.updateTag({ property: 'og:image:width', content: '1000' });
-    this.metaService.updateTag({ property: 'og:image:height', content: '500' });
+    this.metaService.updateTag({ property: 'og:image:width', content: this.defaultImageWidth });
+    this.metaService.updateTag({ property: 'og:image:height', content: this.defaultImageHeight });
   }
 
   setManualOgImage(imageFilename) {
+    if (this.isNitoPreview) {
+      this.clearOgImage();
+      return;
+    }
     const ogImage = `${window.location.protocol}//${window.location.host}/resources/previews/${imageFilename}`;
     this.metaService.updateTag({ property: 'og:image', content: ogImage });
     this.metaService.updateTag({ property: 'og:image:width', content: '2000' });

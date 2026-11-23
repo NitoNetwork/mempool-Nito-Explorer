@@ -43,7 +43,7 @@
 </ng-template>
 
 <ng-template #loadingFees>
-  <p role="status">Core fee estimates unavailable or synchronizing. <span *ngIf="(stateService.orchardActivated$ | async)">Orchard fees use policy virtual size, including proof cost.</span></p>
+  <p role="status"><span i18n="@@fees-box.syncing">Fee estimates are synchronizing.</span> <span *ngIf="(stateService.orchardActivated$ | async)" i18n="@@fees-box.orchard-size">Orchard fee rates use a virtual size that includes the cost of proofs.</span></p>
   <div class="d-flex">
     <div class="fee-progress-bar" [style.background]="noPriority">
       <span class="fee-label" i18n="fees-box.no-priority">No Priority</span>

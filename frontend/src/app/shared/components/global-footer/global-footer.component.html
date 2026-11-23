@@ -8,7 +8,7 @@
             <img [src]="enterpriseInfo?.footer_img" [alt]="enterpriseInfo.title" height="60px" class="enterprise-logo">
           } @else {
             
-            <img src="/resources/nito-logo.png" alt="" style="height:50px;display:block;margin-bottom:8px;"><span style="color:#fff;font-size:22px;font-weight:700;display:block;">Nito Mempool's Explorer</span>
+            <img src="/resources/nito-logo.png?v=2" alt="" style="height:50px;display:block;margin-bottom:8px;"><span style="color:#fff;font-size:22px;font-weight:700;display:block;">Nito Mempool's Explorer</span>
           }
         </div>
         <div class="site-options language-selector d-flex justify-content-center align-items-center" [class]="{'services': isServicesPage}">
@@ -63,7 +63,7 @@
     <div class="row version" [style]="{'background-color': isServicesPage ? 'var(--bg)' : ''}">
       <div class="col-sm-12">
         <p *ngIf="officialMempoolSpace">
-          <a target="_blank" href="https://github.com/NitoNetwork/mempool-Nito-Explorer">Open Source Nito Mempool Explorer</a>
+          <a target="_blank" href="https://github.com/NitoNetwork/mempool-Nito-Explorer" i18n="@@footer.open-source-explorer">Open Source Nito Mempool Explorer</a>
           <span *ngIf="stateService.env.GIT_COMMIT_HASH_MEMPOOL_SPACE">[{{ (servicesBackendInfo$ | async )?.gitCommit | slice:0:8 }}]</span>
         </p>
         <p *ngIf="!officialMempoolSpace"><a target="_blank" href="https://github.com/NitoNetwork/mempool-Nito-Explorer">Open Source Nito Mempool Explorer</a></p>

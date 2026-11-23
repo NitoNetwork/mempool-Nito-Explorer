@@ -143,6 +143,7 @@ export interface SinglePoolStats {
   poolId: number;
   poolUniqueId: number; // unique global pool id
   name: string;
+  displayName?: string;
   link: string;
   blockCount: number;
   emptyBlocks: number;

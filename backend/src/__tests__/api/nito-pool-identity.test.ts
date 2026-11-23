@@ -1,3 +1,5 @@
+import { poolDisplayNames } from '../../api/mining/pool-display-names';
+
 describe('trusted Nito pool identities', () => {
   const payoutAddress = '168h2xMi1YeZAE4p13BorJwFA5xSM8X2AN';
   const shortenedAddress = '168h2xMi...X2AN';
@@ -115,5 +117,25 @@ describe('trusted Nito pool identities', () => {
 
     expect(poolsRepository.$updatePoolNameIfNewer).not.toHaveBeenCalled();
     expect(pool.name).toBe('NitroPool');
+  });
+
+  test('keeps distinct active identities for miners using the same software marker', () => {
+    const name = 'Mined with RMT Node on Umbrel';
+    const labels = poolDisplayNames([
+      { poolId: 7, name, slug: 'umbrel_aaaaaa01' },
+      { poolId: 8, name, slug: 'umbrel_aaaaaa02' },
+      { poolId: 9, name: 'Other Pool', slug: 'other-pool' },
+    ]);
+    expect([...labels]).toEqual([
+      [7, `…aaaaaa01 · ${name}`],
+      [8, `…aaaaaa02 · ${name}`],
+      [9, 'Other Pool'],
+    ]);
+  });
+
+  test('does not register a payout identity from an orphan', async () => {
+    const pool = await blocks.$findBlockMiner(coinbase('Mined with RMT Node on Umbrel'), 1111003, false);
+    expect(pool.slug).toBe('unknown');
+    expect(poolsRepository.$autoRegisterPool).not.toHaveBeenCalled();
   });
 });

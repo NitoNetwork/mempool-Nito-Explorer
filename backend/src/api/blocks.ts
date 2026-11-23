@@ -393,7 +393,7 @@ class Blocks {
     if (['mainnet', 'testnet', 'signet', 'testnet4', 'regtest'].includes(config.MEMPOOL.NETWORK)) {
       let pool: PoolTag;
       if (coinbaseTx !== undefined) {
-        pool = await this.$findBlockMiner(coinbaseTx, block.height);
+        pool = await this.$findBlockMiner(coinbaseTx, block.height, !block.stale);
       } else {
         if (config.DATABASE.ENABLED === true) {
           pool = await poolsRepository.$getUnknownPool();
@@ -565,7 +565,7 @@ class Blocks {
    *   3. Address only (no coinbase text) → auto-register with shortened address
    *   4. No info at all → Unknown (edge case)
    */
-  private async $findBlockMiner(txMinerInfo: TransactionMinerInfo | undefined, blockHeight: number = 0): Promise<PoolTag> {
+  private async $findBlockMiner(txMinerInfo: TransactionMinerInfo | undefined, blockHeight: number = 0, allowPoolUpdates = true): Promise<PoolTag> {
     // Step 0: No transaction info at all
     if (txMinerInfo === undefined || txMinerInfo.vout.length < 1) {
       if (config.DATABASE.ENABLED === true) {
@@ -591,6 +591,7 @@ class Blocks {
       const existingPool = await poolsRepository.$getPoolByAddress(poolAddress);
 
       if (existingPool) {
+        if (!allowPoolUpdates) { return existingPool; }
         const isDynamicPool = existingPool.link === '' && existingPool.slug?.endsWith(`_${addrSuffix}`);
 
         if (minerName && isDynamicPool && existingPool.name !== minerName) {
@@ -616,6 +617,9 @@ class Blocks {
 
         return existingPool;
       }
+
+      // An orphan may be inspected, but cannot create or rename a mining identity.
+      if (!allowPoolUpdates) { return await poolsRepository.$getUnknownPool(); }
 
       // No pool for this address yet: create a new pool identity.
       const displayName = minerName || this.$shortenAddress(poolAddress);

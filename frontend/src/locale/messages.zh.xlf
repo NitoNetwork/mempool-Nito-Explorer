@@ -11666,6 +11666,98 @@
         <source>This has been the case on all blockchains since 2009 and is completely safe.</source>
         <target>自2009年以来，所有区块链都是如此，这是完全安全的。</target>
       </trans-unit>
+      <trans-unit id="2f81e3842110f5566ae2d0b246e3497bec65bad3" datatype="html">
+        <source>nitoshi/vB</source>
+        <target>聪/字节</target>
+      </trans-unit>
+      <trans-unit id="d4b773c761e87928b8658fe253c276f1d84044a9" datatype="html">
+        <source>Accelerate to ~<x id="INTERPOLATION" equiv-text="{{ x | number : &apos;1.0-0&apos; }}"/> nitoshi/vB</source>
+        <target>加速至~<x id="INTERPOLATION" equiv-text="{{ x | number : '1.0-0' }}"/>聪/字节</target>
+      </trans-unit>
+      <trans-unit id="graphs.accelerationFees.accelerated" datatype="html">
+        <source>Accelerated</source>
+        <target>已加速</target>
+      </trans-unit>
+      <trans-unit id="f58edecf814545cd0becf2ce68bab7de10e25711" datatype="html">
+        <source>NITO</source>
+        <target>比特币</target>
+      </trans-unit>
+      <trans-unit id="meta.description.nito.address" datatype="html">
+        <source>See mempool transactions, confirmed transactions, balance, and more for <x id="PH" equiv-text="this.stateService.network===&apos;liquid&apos;||this.stateService.network===&apos;liquidtestnet&apos;?&apos;Liquid&apos;:&apos;Nito&apos;"/><x id="PH_1" equiv-text="seoDescriptionNetwork(this.stateService.network)"/> address <x id="INTERPOLATION" equiv-text="this.addressString"/>.</source>
+        <target>查看 <x id="PH" equiv-text="this.stateService.network==='liquid'||this.stateService.network==='liquidtestnet'?'Liquid':'Nitocoin'"/><x id="PH_1" equiv-text="seoDescriptionNetwork(this.stateService.network)"/> 地址 <x id="INTERPOLATION" equiv-text="this.addressString"/> 的内存池交易、已确认交易、余额等。</target>
+      </trans-unit>
+      <trans-unit id="graphs.blockFeesSubsidy.fees" datatype="html">
+        <source>Fees</source>
+        <target>费用</target>
+      </trans-unit>
+      <trans-unit id="8c04fe2c71ac7ae614195ae737eb2c3c8e052452" datatype="html">
+        <source>Total amount of NITO held in non-dust Federation UTXOs that have expired timelocks</source>
+        <target>非尘联邦UTXO持有的已过期时间锁的 NITO 总量</target>
+      </trans-unit>
+      <trans-unit id="4a0c346986bbb2c1e57bea193eedafed0d86a015" datatype="html">
+        <source>Total amount of NITO held in Federation UTXOs that have expired timelocks</source>
+        <target>已过期时间锁的联邦未花费输出中持有的 NITO 总量</target>
+      </trans-unit>
+      <trans-unit id="b81e3b60653955a0b1915f4601d8c0277ea25868" datatype="html">
+        <source>Pools luck (~4 weeks)</source>
+        <target>矿池运气 (~4周)</target>
+      </trans-unit>
+      <trans-unit id="5d843a1196ad919e257725d6d3e996a5e253ef49" datatype="html">
+        <source>Pools count (~4 weeks)</source>
+        <target>矿池数量 (~4周)</target>
+      </trans-unit>
+      <trans-unit id="3d3a5f61418d8efe627f1aabbf0ebb491c5b4a16" datatype="html">
+        <source>Blocks (~4 weeks)</source>
+        <target>区块 (~4周)</target>
+      </trans-unit>
+      <trans-unit id="8d51c47ca0f6f0249c8af757500cdbd879e5c35b" datatype="html">
+        <source>Nitocoin Price</source>
+        <target>比特币价格</target>
+      </trans-unit>
+      <trans-unit id="857a49366b27c149225b573698cef74e4a7861c2" datatype="html">
+        <source>Maximum fee rate (nitoshi/vB)</source>
+        <target>最高费率 (聪/字节)</target>
+      </trans-unit>
+      <trans-unit id="mining.avg-fee-title-4w" datatype="html">
+        <source>Avg Tx Fee</source>
+        <target>平均单笔交易费率</target>
+      </trans-unit>
+      <trans-unit id="70264b9b8aee6a9c6e91c7cdea81a2355fceeeeb" datatype="html">
+        <source>nitoshi/tx</source>
+        <target>聪/笔</target>
+      </trans-unit>
+      <trans-unit id="89401de5328899b365e9c4a1f31cd929469f4282" datatype="html">
+        <source>Search</source>
+        <target>搜索</target>
+      </trans-unit>
+      <trans-unit id="02974e87f54d8a1d2acd30ae109aa74f893f91f6" datatype="html">
+        <source>Mempool by vBytes (nitoshi/vByte)</source>
+        <target>交易字节/秒 (字节)</target>
+      </trans-unit>
+      <trans-unit id="meta.description.bitcoin.graphs.mempool" datatype="html">
+        <source>See mempool size (in MvB) and transactions per second (in vB/s) visualized over time.</source>
+        <target>查看随时间变化的内存池大小（以 MvB 为单位）和每秒交易次数（以 vB/s 为单位）。</target>
+      </trans-unit>
+      <trans-unit id="meta.description.nito.transaction" datatype="html">
+        <source>Get real-time status, addresses, fees, script info, and more for <x id="PH" equiv-text="network"/><x id="PH_1" equiv-text="seoDescription"/> transaction with txid <x id="PH_2" equiv-text="this.txId"/>.</source>
+        <target>获取 <x id="PH" equiv-text="network"/><x id="PH_1" equiv-text="seoDescription"/> 交易的实时状态、地址、费用、脚本信息等，交易 ID 为 <x id="PH_2" equiv-text="this.txId"/>。</target>
+      </trans-unit>
+      <trans-unit id="meta.description.bitcoin.transaction" datatype="html">
+        <source>Get real-time status, addresses, fees, script info, and more for <x id="PH" equiv-text="network"/><x id="PH_1" equiv-text="seoDescription"/> transaction with txid <x id="PH_2" equiv-text="this.txId"/>.</source>
+        <target>获取 <x id="PH" equiv-text="network"/><x id="PH_1" equiv-text="seoDescription"/> 交易的实时状态、地址、费用、脚本信息等，交易 ID 为 <x id="PH_2" equiv-text="this.txId"/>。</target>
+      </trans-unit>
+      <trans-unit id="e8f0bde6ce554fed5382ac2d3021c4ed545328e1" datatype="html">
+        <source>Error decoding transaction, reason: <x id="INTERPOLATION" equiv-text="{{ error | nitoActivationText:(stateService.orchardActivated$ | async) }}"/></source>
+        <target>交易解码错误，原因：<x id="INTERPOLATION" equiv-text="{{ error }}"/></target>
+      </trans-unit>
+      <trans-unit id="meta.description.bitcoin.wallet" datatype="html">
+        <source>See mempool transactions, confirmed transactions, balance, and more for <x id="PH" equiv-text="this.stateService.network===&apos;liquid&apos;||this.stateService.network===&apos;liquidtestnet&apos;?&apos;Liquid&apos;:&apos;Nito&apos;"/><x id="PH_1" equiv-text="seoDescriptionNetwork(this.stateService.network)"/> wallet <x id="INTERPOLATION" equiv-text="walletName"/>.</source>
+        <target>查看 <x id="PH" equiv-text="this.stateService.network==='liquid'||this.stateService.network==='liquidtestnet'?'Liquid':'Nitocoin'"/><x id="PH_1" equiv-text="seoDescriptionNetwork(this.stateService.network)"/> 钱包 <x id="INTERPOLATION" equiv-text="walletName"/> 的内存池交易、已确认交易、余额等。</target>
+      </trans-unit>
+      <trans-unit id="dashboard.pool-total-confirmed" datatype="html">
+        <source>Total</source>
+        <target>全部的</target>
+      </trans-unit>
       </body>
   </file>
 </xliff>

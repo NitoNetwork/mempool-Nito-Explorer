@@ -17,6 +17,8 @@ interface Hashrate {
   avgHashRate: number;
   share: number;
   poolName: string;
+  poolId?: number;
+  poolDisplayName?: string;
 }
 
 @Component({
@@ -123,36 +125,31 @@ export class HashrateChartPoolsComponent implements OnInit {
 
   applyHashrates(): any[] {
     const times: { [time: number]: { hashrates: { [pool: string]: Hashrate } } } = {};
-    const pools = {};
+    const pools = new Map<string, Hashrate>();
     for (const hashrate of this.hashrates) {
       if (!times[hashrate.timestamp]) {
-        times[hashrate.timestamp] = { hashrates: {} };
+        times[hashrate.timestamp] = { hashrates: Object.create(null) };
       }
-      times[hashrate.timestamp].hashrates[hashrate.poolName] = hashrate;
-      if (!pools[hashrate.poolName]) {
-        pools[hashrate.poolName] = true;
-      }
+      const id = hashrate.poolId?.toString() ?? hashrate.poolName;
+      times[hashrate.timestamp].hashrates[id] = hashrate;
+      pools.set(id, hashrate);
     }
 
     const sortedTimes = Object.keys(times).sort((a,b) => parseInt(a) - parseInt(b)).map(time => ({ time: parseInt(time), hashrates: times[time].hashrates }));
-    const lastHashrates = sortedTimes[sortedTimes.length - 1].hashrates;
-    const sortedPools = Object.keys(pools).sort((a,b) => {
-      if (lastHashrates[b]?.share ?? lastHashrates[a]?.share ?? false) {
-        // sort by descending share of hashrate in latest period
-        return (lastHashrates[b]?.share || 0) - (lastHashrates[a]?.share || 0);
-      } else {
-        // tiebreak by pool name
-        b < a;
-      }
-    });
+    const lastHashrates = sortedTimes[sortedTimes.length - 1]?.hashrates;
+    const sortedPools = [...pools.keys()].sort((a, b) =>
+      (lastHashrates?.[b]?.share ?? 0) - (lastHashrates?.[a]?.share ?? 0) || a.localeCompare(b));
 
     const series = [];
     const legends = [];
-    for (const name of sortedPools) {
+    for (const id of sortedPools) {
+      const pool = pools.get(id);
+      const name = pool.poolDisplayName ?? pool.poolName;
       const data = sortedTimes.map(({ time, hashrates }) => {
-        return [time * 1000, (hashrates[name]?.share || 0) * 100];
+        return [time * 1000, (hashrates[id]?.share || 0) * 100];
       });
       series.push({
+        id,
         zlevel: 0,
         stack: 'Total',
         name: name,

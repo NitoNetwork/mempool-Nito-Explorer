@@ -11665,6 +11665,86 @@
         <source>This has been the case on all blockchains since 2009 and is completely safe.</source>
         <target>Ez 2009 óta minden blokkláncon így van és teljesen biztonságos.</target>
       </trans-unit>
+      <trans-unit id="d4b773c761e87928b8658fe253c276f1d84044a9" datatype="html">
+        <source>Accelerate to ~<x id="INTERPOLATION" equiv-text="{{ x | number : &apos;1.0-0&apos; }}"/> nitoshi/vB</source>
+        <target>Gyorsítás erre ~<x id="INTERPOLATION" equiv-text="{{ x | number : '1.0-0' }}"/> nitoshi/vB</target>
+      </trans-unit>
+      <trans-unit id="graphs.accelerationFees.accelerated" datatype="html">
+        <source>Accelerated</source>
+        <target>Gyorsított</target>
+      </trans-unit>
+      <trans-unit id="meta.description.nito.address" datatype="html">
+        <source>See mempool transactions, confirmed transactions, balance, and more for <x id="PH" equiv-text="this.stateService.network===&apos;liquid&apos;||this.stateService.network===&apos;liquidtestnet&apos;?&apos;Liquid&apos;:&apos;Nito&apos;"/><x id="PH_1" equiv-text="seoDescriptionNetwork(this.stateService.network)"/> address <x id="INTERPOLATION" equiv-text="this.addressString"/>.</source>
+        <target>Nézd meg a mempool tranzakciókat, megerősített tranzakciókat, egyenleget és mást ami a <x id="PH" equiv-text="this.stateService.network==='liquid'||this.stateService.network==='liquidtestnet'?'Liquid':'Nitocoin'"/><x id="PH_1" equiv-text="seoDescriptionNetwork(this.stateService.network)"/> címhez <x id="INTERPOLATION" equiv-text="this.addressString"/> tartozik.</target>
+      </trans-unit>
+      <trans-unit id="graphs.blockFeesSubsidy.fees" datatype="html">
+        <source>Fees</source>
+        <target>Díjjak</target>
+      </trans-unit>
+      <trans-unit id="8c04fe2c71ac7ae614195ae737eb2c3c8e052452" datatype="html">
+        <source>Total amount of NITO held in non-dust Federation UTXOs that have expired timelocks</source>
+        <target>Teljes összeg NITO-ben a szövetség nem-por UTXO-iban tárolva amiken lejárt az időzár</target>
+      </trans-unit>
+      <trans-unit id="4a0c346986bbb2c1e57bea193eedafed0d86a015" datatype="html">
+        <source>Total amount of NITO held in Federation UTXOs that have expired timelocks</source>
+        <target>Teljes NITO mennyiség Szövetségi UTXO-ban tartva amin lejárt az időzár</target>
+      </trans-unit>
+      <trans-unit id="b81e3b60653955a0b1915f4601d8c0277ea25868" datatype="html">
+        <source>Pools luck (~4 weeks)</source>
+        <target>Pool-ok szerencséje (~4 hét)</target>
+      </trans-unit>
+      <trans-unit id="5d843a1196ad919e257725d6d3e996a5e253ef49" datatype="html">
+        <source>Pools count (~4 weeks)</source>
+        <target>Pool-ok száma (~4 hét)</target>
+      </trans-unit>
+      <trans-unit id="3d3a5f61418d8efe627f1aabbf0ebb491c5b4a16" datatype="html">
+        <source>Blocks (~4 weeks)</source>
+        <target>Blökkök (~4 hét)</target>
+      </trans-unit>
+      <trans-unit id="8d51c47ca0f6f0249c8af757500cdbd879e5c35b" datatype="html">
+        <source>Nitocoin Price</source>
+        <target>Nitocoin Árfolyam</target>
+      </trans-unit>
+      <trans-unit id="857a49366b27c149225b573698cef74e4a7861c2" datatype="html">
+        <source>Maximum fee rate (nitoshi/vB)</source>
+        <target>Legmagasabb díj arány (nitoshi/vB)</target>
+      </trans-unit>
+      <trans-unit id="mining.avg-fee-title-4w" datatype="html">
+        <source>Avg Tx Fee</source>
+        <target>Átlagos Tx Díj</target>
+      </trans-unit>
+      <trans-unit id="89401de5328899b365e9c4a1f31cd929469f4282" datatype="html">
+        <source>Search</source>
+        <target>Keresés</target>
+      </trans-unit>
+      <trans-unit id="02974e87f54d8a1d2acd30ae109aa74f893f91f6" datatype="html">
+        <source>Mempool by vBytes (nitoshi/vByte)</source>
+        <target>Mempool vBájtonként (nitoshi/vBájt)</target>
+      </trans-unit>
+      <trans-unit id="meta.description.bitcoin.graphs.mempool" datatype="html">
+        <source>See mempool size (in MvB) and transactions per second (in vB/s) visualized over time.</source>
+        <target>Nézd meg a mempool méretét (MvB-ben) és másodpercenkénti tranzakciókat (vB/s-ban) az idő függvényében ábrázolva.</target>
+      </trans-unit>
+      <trans-unit id="meta.description.nito.transaction" datatype="html">
+        <source>Get real-time status, addresses, fees, script info, and more for <x id="PH" equiv-text="network"/><x id="PH_1" equiv-text="seoDescription"/> transaction with txid <x id="PH_2" equiv-text="this.txId"/>.</source>
+        <target>Kapj valós idejű állapotképet, címeket, díjakat, szkript infót és sok mást a <x id="PH" equiv-text="network"/><x id="PH_1" equiv-text="seoDescription"/> tranzakcióról ezzel a txid-vel: <x id="PH_2" equiv-text="this.txId"/>.</target>
+      </trans-unit>
+      <trans-unit id="meta.description.bitcoin.transaction" datatype="html">
+        <source>Get real-time status, addresses, fees, script info, and more for <x id="PH" equiv-text="network"/><x id="PH_1" equiv-text="seoDescription"/> transaction with txid <x id="PH_2" equiv-text="this.txId"/>.</source>
+        <target>Kapj valós idejű állapotképet, címeket, díjakat, szkript infót és sok mást a <x id="PH" equiv-text="network"/><x id="PH_1" equiv-text="seoDescription"/> tranzakcióról ezzel a txid-vel: <x id="PH_2" equiv-text="this.txId"/>.</target>
+      </trans-unit>
+      <trans-unit id="e8f0bde6ce554fed5382ac2d3021c4ed545328e1" datatype="html">
+        <source>Error decoding transaction, reason: <x id="INTERPOLATION" equiv-text="{{ error | nitoActivationText:(stateService.orchardActivated$ | async) }}"/></source>
+        <target>Hiba a tranzakció dekódolásakor, ok: <x id="INTERPOLATION" equiv-text="{{ error }}"/></target>
+      </trans-unit>
+      <trans-unit id="meta.description.bitcoin.wallet" datatype="html">
+        <source>See mempool transactions, confirmed transactions, balance, and more for <x id="PH" equiv-text="this.stateService.network===&apos;liquid&apos;||this.stateService.network===&apos;liquidtestnet&apos;?&apos;Liquid&apos;:&apos;Nito&apos;"/><x id="PH_1" equiv-text="seoDescriptionNetwork(this.stateService.network)"/> wallet <x id="INTERPOLATION" equiv-text="walletName"/>.</source>
+        <target>Nézd meg a mempool tranzakciókat, megerősített tranzakciókat, egyenleget és még sok mást a(z) <x id="PH" equiv-text="this.stateService.network==='liquid'||this.stateService.network==='liquidtestnet'?'Liquid':'Nitocoin'"/><x id="PH_1" equiv-text="seoDescriptionNetwork(this.stateService.network)"/> tárcához <x id="INTERPOLATION" equiv-text="walletName"/>.</target>
+      </trans-unit>
+      <trans-unit id="dashboard.pool-total-confirmed" datatype="html">
+        <source>Total</source>
+        <target>Összes</target>
+      </trans-unit>
       </body>
   </file>
 </xliff>

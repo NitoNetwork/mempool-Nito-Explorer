@@ -1,6 +1,7 @@
 import { escape } from 'mysql2';
 import { Common } from '../api/common';
 import mining from '../api/mining/mining';
+import { poolDisplayNames } from '../api/mining/pool-display-names';
 import DB from '../database';
 import logger from '../logger';
 import PoolsRepository from './PoolsRepository';
@@ -104,12 +105,13 @@ class HashratesRepository {
   public async $getPoolsWeeklyHashrate(interval: string | null): Promise<any[]> {
     interval = Common.getSqlInterval(interval);
 
-    const topPoolsId = (await PoolsRepository.$getPoolsInfo('1w')).map((pool) => pool.poolId);
+    const activePools = await PoolsRepository.$getPoolsInfo('1w');
+    const topPoolsId = activePools.map(pool => pool.poolId);
     if (topPoolsId.length === 0) {
       return [];
     }
 
-    let query = `SELECT UNIX_TIMESTAMP(hashrate_timestamp) as timestamp, avg_hashrate as avgHashrate, share, pools.name as poolName
+    let query = `SELECT UNIX_TIMESTAMP(hashrate_timestamp) as timestamp, avg_hashrate as avgHashrate, share, pool_id as poolId, pools.name as poolName
       FROM hashrates
       JOIN pools on pools.id = pool_id`;
 
@@ -126,7 +128,10 @@ class HashratesRepository {
 
     try {
       const [rows]: any[] = await DB.query(query);
-      return rows.map(row => ({ ...row, timestamp: Number(row.timestamp) }));
+      const labels = poolDisplayNames(activePools);
+      return rows.map(row => ({
+        ...row, timestamp: Number(row.timestamp), poolDisplayName: labels.get(row.poolId) ?? row.poolName,
+      }));
     } catch (e) {
       logger.err('Cannot fetch weekly pools hashrate history. Reason: ' + (e instanceof Error ? e.message : e), logger.tags.mining);
       throw e;

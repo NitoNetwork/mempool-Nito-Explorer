@@ -6720,7 +6720,7 @@
       </trans-unit>
       <trans-unit id="7e93f7285e22e5a3c58cdde2205d4d2b5bfc079c" datatype="html">
         <source>Transaction hex</source>
-        <target>Transaction hex</target>
+        <target>Transaction en hexadécimal</target>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/components/push-transaction/push-transaction.component.html</context>
           <context context-type="linenumber">6</context>
@@ -7024,7 +7024,7 @@
       </trans-unit>
       <trans-unit id="c6a48e5ee096fba914fb4927d16a5d2e0941e0fe" datatype="html">
         <source><x id="INTERPOLATION" equiv-text="{{ networkName }}"/> Transaction</source>
-        <target><x id="INTERPOLATION" equiv-text="{{ networkName }}"/> Transaction</target>
+        <target>Transaction <x id="INTERPOLATION" equiv-text="{{ networkName }}"/></target>
         <context-group purpose="location">
           <context context-type="sourcefile">src/app/components/search-form/search-results/search-results.component.html</context>
           <context context-type="linenumber">21</context>
@@ -11697,6 +11697,342 @@
       <trans-unit id="fees-box.node-minimum" datatype="html">
         <source>Minimum accepted by this node</source>
         <target>Minimum accepté par ce nœud</target>
+      </trans-unit>
+      <trans-unit id="2f81e3842110f5566ae2d0b246e3497bec65bad3" datatype="html">
+        <source>nitoshi/vB</source>
+        <target>nitoshi/vB</target>
+      </trans-unit>
+      <trans-unit id="34eea2f70177ab05cc8e84444ec4d92578c0c65d" datatype="html">
+        <source>Acceleration service fees</source>
+        <target>Frais du service d’accélération</target>
+      </trans-unit>
+      <trans-unit id="d4b773c761e87928b8658fe253c276f1d84044a9" datatype="html">
+        <source>Accelerate to ~<x id="INTERPOLATION" equiv-text="{{ x | number : &apos;1.0-0&apos; }}"/> nitoshi/vB</source>
+        <target>Accélérer à environ <x id="INTERPOLATION" equiv-text="{{ x | number : &apos;1.0-0&apos; }}"/> nitoshi/vB</target>
+      </trans-unit>
+      <trans-unit id="6693ca41dea3f8a2b1747ba08e3f780c52d074bf" datatype="html">
+        <source>Using partner code</source>
+        <target>Utilisation d’un code partenaire</target>
+      </trans-unit>
+      <trans-unit id="graphs.accelerationFees.totalBidBoost" datatype="html">
+        <source>Total bid boost</source>
+        <target>Total des suppléments d’enchère</target>
+      </trans-unit>
+      <trans-unit id="graphs.accelerationFees.accelerated" datatype="html">
+        <source>Accelerated</source>
+        <target>Accélérées</target>
+      </trans-unit>
+      <trans-unit id="f58edecf814545cd0becf2ce68bab7de10e25711" datatype="html">
+        <source>NITO</source>
+        <target>NITO</target>
+      </trans-unit>
+      <trans-unit id="meta.description.nito.address" datatype="html">
+        <source>See mempool transactions, confirmed transactions, balance, and more for <x id="PH" equiv-text="this.stateService.network===&apos;liquid&apos;||this.stateService.network===&apos;liquidtestnet&apos;?&apos;Liquid&apos;:&apos;Nito&apos;"/><x id="PH_1" equiv-text="seoDescriptionNetwork(this.stateService.network)"/> address <x id="INTERPOLATION" equiv-text="this.addressString"/>.</source>
+        <target>Consultez le solde et les transactions en attente ou confirmées de l’adresse <x id="PH" equiv-text="this.stateService.network===&apos;liquid&apos;||this.stateService.network===&apos;liquidtestnet&apos;?&apos;Liquid&apos;:&apos;Nito&apos;"/><x id="PH_1" equiv-text="seoDescriptionNetwork(this.stateService.network)"/> <x id="INTERPOLATION" equiv-text="this.addressString"/>.</target>
+      </trans-unit>
+      <trans-unit id="2d70fa1c425017d1476ef64d4aa54076b34f3d09" datatype="html">
+        <source><x id="LINE_BREAK" ctype="lb"/><x id="START_ITALIC_TEXT" ctype="x-i" equiv-text="&lt;i&gt;"/>There are too many transactions on this address, more than your backend can handle. See more on <x id="START_LINK" ctype="x-a" equiv-text="&lt;a href=&quot;/docs/faq#address-lookup-issues&quot;&gt;"/>setting up a stronger backend<x id="CLOSE_LINK" ctype="x-a" equiv-text="&lt;/a&gt;"/>.<x id="CLOSE_ITALIC_TEXT" ctype="x-i" equiv-text="&lt;/i&gt;"/><x id="LINE_BREAK" ctype="lb"/><x id="LINE_BREAK" ctype="lb"/> This explorer cannot return the full address history until its ElectrumX backend is reconfigured or resynchronized. No address data was sent to a third party. </source>
+        <target><x id="LINE_BREAK" ctype="lb"/><x id="START_ITALIC_TEXT" ctype="x-i" equiv-text="&lt;i&gt;"/>Cette adresse contient plus de transactions que le serveur ne peut traiter. Consultez <x id="START_LINK" ctype="x-a" equiv-text="&lt;a href=&quot;/docs/faq#address-lookup-issues&quot;&gt;"/>la documentation de configuration du serveur<x id="CLOSE_LINK" ctype="x-a" equiv-text="&lt;/a&gt;"/>.<x id="CLOSE_ITALIC_TEXT" ctype="x-i" equiv-text="&lt;/i&gt;"/><x id="LINE_BREAK" ctype="lb"/>L’historique complet sera disponible après la reconfiguration ou la resynchronisation d’ElectrumX. Les données de l’adresse restent sur cet explorateur.<x id="LINE_BREAK" ctype="lb"/></target>
+      </trans-unit>
+      <trans-unit id="d67b55a9b2fa777080e4bda53d5a0d70cf6fe4ed" datatype="html">
+        <source>NITO Holdings</source>
+        <target>Avoirs en NITO</target>
+      </trans-unit>
+      <trans-unit id="meta.description.bitcoin.graphs.block-fee-rates" datatype="html">
+        <source>See Nito feerates visualized over time, including minimum and maximum feerates per block along with feerates at various percentiles.</source>
+        <target>Suivez l’évolution des taux de frais sur Nito, avec les minimums, les maximums et les percentiles par bloc.</target>
+      </trans-unit>
+      <trans-unit id="meta.description.bitcoin.graphs.block-fees" datatype="html">
+        <source>See the average mining fees earned per Nito block visualized in NITO and USD over time.</source>
+        <target>Suivez l’évolution des frais de minage moyens par bloc Nito, en NITO et en dollars américains.</target>
+      </trans-unit>
+      <trans-unit id="graphs.blockFees.feesBtc" datatype="html">
+        <source>Fees NITO</source>
+        <target>Frais en NITO</target>
+      </trans-unit>
+      <trans-unit id="graphs.blockFees.feesFiat" datatype="html">
+        <source>Fees <x id="currency" equiv-text="this.currency"/></source>
+        <target>Frais en <x id="currency" equiv-text="this.currency"/></target>
+      </trans-unit>
+      <trans-unit id="graphs.blockFees.avgBlock" datatype="html">
+        <source>* On average around block <x id="block" equiv-text="data[0].data[2]"/></source>
+        <target>* Moyenne autour du bloc <x id="block" equiv-text="data[0].data[2]"/></target>
+      </trans-unit>
+      <trans-unit id="graphs.blockFeesSubsidy.subsidy" datatype="html">
+        <source>Subsidy</source>
+        <target>Récompense de base</target>
+      </trans-unit>
+      <trans-unit id="graphs.blockFeesSubsidy.fees" datatype="html">
+        <source>Fees</source>
+        <target>Frais</target>
+      </trans-unit>
+      <trans-unit id="graphs.blockFeesSubsidy.subsidyUsd" datatype="html">
+        <source>Subsidy (USD)</source>
+        <target>Récompense de base (USD)</target>
+      </trans-unit>
+      <trans-unit id="graphs.blockFeesSubsidy.feesUsd" datatype="html">
+        <source>Fees (USD)</source>
+        <target>Frais (USD)</target>
+      </trans-unit>
+      <trans-unit id="graphs.blockFeesSubsidy.subsidyPercent" datatype="html">
+        <source>Subsidy (%)</source>
+        <target>Récompense de base (%)</target>
+      </trans-unit>
+      <trans-unit id="graphs.blockFeesSubsidy.feesPercent" datatype="html">
+        <source>Fees (%)</source>
+        <target>Frais (%)</target>
+      </trans-unit>
+      <trans-unit id="meta.description.bitcoin.graphs.block-fees-subsidy" datatype="html">
+        <source>See the mining fees earned per Nito block compared to the observed Nito block subsidy, visualized in NITO and USD over time.</source>
+        <target>Comparez l’évolution des frais de minage et de la récompense de base des blocs Nito, en NITO et en dollars américains.</target>
+      </trans-unit>
+      <trans-unit id="c942c8557e8e2d82082f88fe785314ff36106b4d" datatype="html">
+        <source>Select filter categories to highlight matching transactions</source>
+        <target>Sélectionnez des filtres pour mettre en évidence les transactions correspondantes</target>
+      </trans-unit>
+      <trans-unit id="meta.description.bitcoin.graphs.block-health" datatype="html">
+        <source>See Nito block health visualized over time. Block health is a measure of how many expected transactions were included in an actual mined block. Expected transactions are determined using the explorer&apos;s implementation of Nito Core&apos;s transaction-selection rules.</source>
+        <target>Suivez l’évolution de la conformité des blocs Nito. Elle mesure la part des transactions attendues qui ont été incluses, selon les règles de sélection de Nito Core appliquées par l’explorateur.</target>
+      </trans-unit>
+      <trans-unit id="meta.description.bitcoin.graphs.block-rewards" datatype="html">
+        <source>See Nito block rewards in NITO and USD visualized over time. Block rewards are the total funds miners earn from the block subsidy and fees.</source>
+        <target>Suivez les récompenses des blocs Nito en NITO et en dollars américains. Elles comprennent la récompense de base et les frais de transaction.</target>
+      </trans-unit>
+      <trans-unit id="meta.description.bitcoin.graphs.block-sizes" datatype="html">
+        <source>See Nito block sizes (MB) and block weights (weight units) visualized over time.</source>
+        <target>Consultez l’évolution de la taille (Mo) et du poids des blocs Nito.</target>
+      </trans-unit>
+      <trans-unit id="meta.description.bitcoin.block" datatype="html">
+        <source>See size, weight, fee range, included transactions, audit (expected v actual), and more for Nito<x id="PH" equiv-text="seoDescriptionNetwork(this.stateService.network)"/> block <x id="BLOCK_HEIGHT" equiv-text="block.height"/> (<x id="BLOCK_ID" equiv-text="block.id"/>).</source>
+        <target>Consultez la taille, le poids, les frais, les transactions et l’audit du bloc Nito<x id="PH" equiv-text="seoDescriptionNetwork(this.stateService.network)"/> <x id="BLOCK_HEIGHT" equiv-text="block.height"/> (<x id="BLOCK_ID" equiv-text="block.id"/>).</target>
+      </trans-unit>
+      <trans-unit id="meta.description.nito.block" datatype="html">
+        <source>See size, weight, fee range, included transactions, audit (expected v actual), and more for Nito<x id="PH" equiv-text="seoDescriptionNetwork(this.stateService.network)"/> block <x id="BLOCK_HEIGHT" equiv-text="block.height"/> (<x id="BLOCK_ID" equiv-text="block.id"/>).</source>
+        <target>Consultez la taille, le poids, les frais, les transactions et l’audit du bloc Nito<x id="PH" equiv-text="seoDescriptionNetwork(this.stateService.network)"/> <x id="BLOCK_HEIGHT" equiv-text="block.height"/> (<x id="BLOCK_ID" equiv-text="block.id"/>).</target>
+      </trans-unit>
+      <trans-unit id="14550072589db418c564e81e4833a4825728b786" datatype="html">
+        <source>Total fees</source>
+        <target>Total des frais</target>
+      </trans-unit>
+      <trans-unit id="meta.description.bitcoin.blocks" datatype="html">
+        <source>See the most recent Nito<x id="PH" equiv-text="seoDescriptionNetwork(this.stateService.network)"/> blocks along with basic stats such as block height, block reward, block size, and more.</source>
+        <target>Consultez les derniers blocs Nito<x id="PH" equiv-text="seoDescriptionNetwork(this.stateService.network)"/>, leur hauteur, leur récompense et leur taille.</target>
+      </trans-unit>
+      <trans-unit id="3fa262b999f6f36dd5c4d63020fdf771b4009c69" datatype="html">
+        <source> Values were capped at the max supply of 1,284,565,890 NITO </source>
+        <target>Les valeurs ont été plafonnées à l’offre maximale de 1 284 565 890 NITO</target>
+      </trans-unit>
+      <trans-unit id="ac0f81713a84217c9bd1d9bb460245d8190b073f" datatype="html">
+        <source>More</source>
+        <target>Plus</target>
+      </trans-unit>
+      <trans-unit id="meta.description.bitcoin.graphs.hashrate" datatype="html">
+        <source>See hashrate and difficulty for the Nito<x id="PH" equiv-text="seoDescriptionNetwork(this.network)"/> network visualized over time.</source>
+        <target>Consultez l’évolution du taux de hachage et de la difficulté du réseau Nito<x id="PH" equiv-text="seoDescriptionNetwork(this.network)"/>.</target>
+      </trans-unit>
+      <trans-unit id="meta.descriptions.bitcoin.graphs.hashrate-pools" datatype="html">
+        <source>See Nito mining pool dominance visualized over time: see how top mining pools&apos; share of total hashrate has fluctuated over time.</source>
+        <target>Suivez l’évolution de la part du taux de hachage des principaux pools de minage Nito.</target>
+      </trans-unit>
+      <trans-unit id="8c04fe2c71ac7ae614195ae737eb2c3c8e052452" datatype="html">
+        <source>Total amount of NITO held in non-dust Federation UTXOs that have expired timelocks</source>
+        <target>Montant total de NITO dans les UTXO de la fédération dont le verrouillage a expiré, hors montants négligeables</target>
+      </trans-unit>
+      <trans-unit id="4a0c346986bbb2c1e57bea193eedafed0d86a015" datatype="html">
+        <source>Total amount of NITO held in Federation UTXOs that have expired timelocks</source>
+        <target>Montant total de NITO dans les UTXO de la fédération dont le verrouillage a expiré</target>
+      </trans-unit>
+      <trans-unit id="10d75850300d666eb82e3437be6a10401ec29180" datatype="html">
+        <source>NITO Address</source>
+        <target>Adresse NITO</target>
+      </trans-unit>
+      <trans-unit id="4ce06818b8fe60a7c040ce7bfecc10b11397401b" datatype="html">
+        <source>24h Volume</source>
+        <target>Volume sur 24 h</target>
+      </trans-unit>
+      <trans-unit id="7729adad4cbe5f490e393a925fae8a9b90f8ac08" datatype="html">
+        <source>Reserve Deficit</source>
+        <target>Déficit de réserves</target>
+      </trans-unit>
+      <trans-unit id="489277af67abab02f1de98f4a7930fc611471eda" datatype="html">
+        <source>occurrence</source>
+        <target>occurrence</target>
+      </trans-unit>
+      <trans-unit id="850e39efd95e6090598e13a01b7825f6b71b1017" datatype="html">
+        <source>occurrences</source>
+        <target>occurrences</target>
+      </trans-unit>
+      <trans-unit id="57d63f33e6e6f3d4716fab5381cff30d517d5c4e" datatype="html">
+        <source>usages</source>
+        <target>utilisations</target>
+      </trans-unit>
+      <trans-unit id="b81e3b60653955a0b1915f4601d8c0277ea25868" datatype="html">
+        <source>Pools luck (~4 weeks)</source>
+        <target>Chance des pools (≈ 4 semaines)</target>
+      </trans-unit>
+      <trans-unit id="5d843a1196ad919e257725d6d3e996a5e253ef49" datatype="html">
+        <source>Pools count (~4 weeks)</source>
+        <target>Nombre de pools (≈ 4 semaines)</target>
+      </trans-unit>
+      <trans-unit id="3d3a5f61418d8efe627f1aabbf0ebb491c5b4a16" datatype="html">
+        <source>Blocks (~4 weeks)</source>
+        <target>Blocs (≈ 4 semaines)</target>
+      </trans-unit>
+      <trans-unit id="meta.description.bitcoin.graphs.pool-ranking" datatype="html">
+        <source>See the top Nito mining pools ranked by number of blocks mined, over your desired timeframe.</source>
+        <target>Comparez les pools de minage Nito selon le nombre de blocs minés sur la période de votre choix.</target>
+      </trans-unit>
+      <trans-unit id="8d51c47ca0f6f0249c8af757500cdbd879e5c35b" datatype="html">
+        <source>Nitocoin Price</source>
+        <target>Cours du NITO</target>
+      </trans-unit>
+      <trans-unit id="857a49366b27c149225b573698cef74e4a7861c2" datatype="html">
+        <source>Maximum fee rate (nitoshi/vB)</source>
+        <target>Taux de frais maximal (nitoshi/vB)</target>
+      </trans-unit>
+      <trans-unit id="submitpackage.tx.max-burn-amount-nito" datatype="html">
+        <source>Maximum burn amount (nitoshis)</source>
+        <target>Montant maximal détruit (en nitoshis)</target>
+      </trans-unit>
+      <trans-unit id="7d0251d860c8cdb2d8b91d9bff02527b3b7b6e19" datatype="html">
+        <source>NITO/block</source>
+        <target>NITO/bloc</target>
+      </trans-unit>
+      <trans-unit id="mining.avg-fee-title-4w" datatype="html">
+        <source>Avg Tx Fee</source>
+        <target>Frais moyens par transaction</target>
+      </trans-unit>
+      <trans-unit id="70264b9b8aee6a9c6e91c7cdea81a2355fceeeeb" datatype="html">
+        <source>nitoshi/tx</source>
+        <target>nitoshi/tx</target>
+      </trans-unit>
+      <trans-unit id="89401de5328899b365e9c4a1f31cd929469f4282" datatype="html">
+        <source>Search</source>
+        <target>Rechercher</target>
+      </trans-unit>
+      <trans-unit id="02974e87f54d8a1d2acd30ae109aa74f893f91f6" datatype="html">
+        <source>Mempool by vBytes (nitoshi/vByte)</source>
+        <target>Volume virtuel du mempool par taux de frais (nitoshi/vB)</target>
+      </trans-unit>
+      <trans-unit id="meta.description.bitcoin.graphs.mempool" datatype="html">
+        <source>See mempool size (in MvB) and transactions per second (in vB/s) visualized over time.</source>
+        <target>Consultez l’évolution de la taille du mempool (MvB) et du débit des transactions (vB/s).</target>
+      </trans-unit>
+      <trans-unit id="meta.description.nito.transaction" datatype="html">
+        <source>Get real-time status, addresses, fees, script info, and more for <x id="PH" equiv-text="network"/><x id="PH_1" equiv-text="seoDescription"/> transaction with txid <x id="PH_2" equiv-text="this.txId"/>.</source>
+        <target>Consultez en temps réel le statut, les adresses, les frais et les scripts de la transaction <x id="PH" equiv-text="network"/><x id="PH_1" equiv-text="seoDescription"/> dont l’identifiant est <x id="PH_2" equiv-text="this.txId"/>.</target>
+      </trans-unit>
+      <trans-unit id="meta.description.bitcoin.transaction" datatype="html">
+        <source>Get real-time status, addresses, fees, script info, and more for <x id="PH" equiv-text="network"/><x id="PH_1" equiv-text="seoDescription"/> transaction with txid <x id="PH_2" equiv-text="this.txId"/>.</source>
+        <target>Consultez en temps réel le statut, les adresses, les frais et les scripts de la transaction <x id="PH" equiv-text="network"/><x id="PH_1" equiv-text="seoDescription"/> dont l’identifiant est <x id="PH_2" equiv-text="this.txId"/>.</target>
+      </trans-unit>
+      <trans-unit id="e8f0bde6ce554fed5382ac2d3021c4ed545328e1" datatype="html">
+        <source>Error decoding transaction, reason: <x id="INTERPOLATION" equiv-text="{{ error | nitoActivationText:(stateService.orchardActivated$ | async) }}"/></source>
+        <target>Erreur de décodage de la transaction : <x id="INTERPOLATION" equiv-text="{{ error | nitoActivationText:(stateService.orchardActivated$ | async) }}"/></target>
+      </trans-unit>
+      <trans-unit id="e3206d43b947c71b21a39b8d376eb7748de34bce" datatype="html">
+        <source> This transaction is stored locally in your browser. Broadcast requests admission to the node mempool. </source>
+        <target>Cette transaction est stockée dans votre navigateur. La diffuser demande au nœud de l’accepter dans son mempool.</target>
+      </trans-unit>
+      <trans-unit id="meta.description.nito.preview-tx" datatype="html">
+        <source>Preview a transaction to the Nito<x id="PH" equiv-text="seoDescriptionNetwork(this.stateService.network)"/> network using the transaction&apos;s raw hex data.</source>
+        <target>Prévisualisez une transaction Nito<x id="PH" equiv-text="seoDescriptionNetwork(this.stateService.network)"/> à partir de ses données hexadécimales.</target>
+      </trans-unit>
+      <trans-unit id="815f4ba6d4c2062f84bbb53340e7f5f0967bc7e6" datatype="html">
+        <source>Transaction acceleration</source>
+        <target>Accélération de transaction</target>
+      </trans-unit>
+      <trans-unit id="ffbdebd1e733b1404b0d1eb62e92e9ea857cac6b" datatype="html">
+        <source>Confirmed Nito accounting</source>
+        <target>Offre NITO confirmée</target>
+      </trans-unit>
+      <trans-unit id="80e43e8db5be065d7410ae87cee7dc964f5a8092" datatype="html">
+        <source>of confirmed total</source>
+        <target>du total confirmé</target>
+      </trans-unit>
+      <trans-unit id="cdc6e49068f5dbc298587e9022773329a9dfc8ca" datatype="html">
+        <source>other confirmed</source>
+        <target>autres montants confirmés</target>
+      </trans-unit>
+      <trans-unit id="c45f830ad5db1508b565c2ee66b8a4a489be7c76" datatype="html">
+        <source>NITO Balance</source>
+        <target>Solde en NITO</target>
+      </trans-unit>
+      <trans-unit id="42775f4fca05c500c5adc78077643c41c1619509" datatype="html">
+        <source>This fee rate was about <x id="INTERPOLATION" equiv-text="{{ overpaidTimes }}"/> times the median fee rate observed in this block</source>
+        <target>Ce taux de frais valait environ <x id="INTERPOLATION" equiv-text="{{ overpaidTimes }}"/> fois le taux médian observé dans ce bloc</target>
+      </trans-unit>
+      <trans-unit id="7c403d2c42da94b64687bbf62efa5476639d374c" datatype="html">
+        <source>High fee <x id="INTERPOLATION" equiv-text="{{ overpaidTimes }}"/>x</source>
+        <target>Frais élevés ×<x id="INTERPOLATION" equiv-text="{{ overpaidTimes }}"/></target>
+      </trans-unit>
+      <trans-unit id="5eb84418f44867850779737da103ddd9f65a1348" datatype="html">
+        <source>Balance (NITO)</source>
+        <target>Solde (NITO)</target>
+      </trans-unit>
+      <trans-unit id="meta.description.bitcoin.wallet" datatype="html">
+        <source>See mempool transactions, confirmed transactions, balance, and more for <x id="PH" equiv-text="this.stateService.network===&apos;liquid&apos;||this.stateService.network===&apos;liquidtestnet&apos;?&apos;Liquid&apos;:&apos;Nito&apos;"/><x id="PH_1" equiv-text="seoDescriptionNetwork(this.stateService.network)"/> wallet <x id="INTERPOLATION" equiv-text="walletName"/>.</source>
+        <target>Consultez le solde et les transactions en attente ou confirmées du portefeuille <x id="PH" equiv-text="this.stateService.network===&apos;liquid&apos;||this.stateService.network===&apos;liquidtestnet&apos;?&apos;Liquid&apos;:&apos;Nito&apos;"/><x id="PH_1" equiv-text="seoDescriptionNetwork(this.stateService.network)"/> <x id="INTERPOLATION" equiv-text="walletName"/>.</target>
+      </trans-unit>
+      <trans-unit id="dashboard.confirmed-pools-label" datatype="html">
+        <source>Confirmed Nito supply</source>
+        <target>Offre NITO confirmée</target>
+      </trans-unit>
+      <trans-unit id="dashboard.confirmed-pools-title" datatype="html">
+        <source>Nito supply</source>
+        <target>Offre NITO</target>
+      </trans-unit>
+      <trans-unit id="dashboard.pool-total-confirmed" datatype="html">
+        <source>Total</source>
+        <target>Total</target>
+      </trans-unit>
+      <trans-unit id="dashboard.pool-transparent" datatype="html">
+        <source>Transparent</source>
+        <target>Transparent</target>
+      </trans-unit>
+      <trans-unit id="dashboard.pool-orchard" datatype="html">
+        <source>Orchard</source>
+        <target>Orchard</target>
+      </trans-unit>
+      <trans-unit id="dashboard.confirmed-pools-unavailable" datatype="html">
+        <source>Supply synchronizing</source>
+        <target>Offre en cours de synchronisation</target>
+      </trans-unit>
+      <trans-unit id="bdee39e9f5079c9e2229d2f1143d89f376b44a94" datatype="html">
+        <source>Current NITO/<x id="INTERPOLATION" equiv-text="{{ currency }}"/></source>
+        <target>Cours NITO/<x id="INTERPOLATION" equiv-text="{{ currency }}"/></target>
+      </trans-unit>
+      <trans-unit id="d02e28fa018af1929385d161cd172fff589eb402" datatype="html">
+        <source>Price history</source>
+        <target>Historique du cours</target>
+      </trans-unit>
+      <trans-unit id="3650fea9097ea3b2892eb46780b7135ce6a1ab2d" datatype="html">
+        <source>LNITO Supply vs. NITO Holdings</source>
+        <target>Offre de LNITO et réserves en NITO</target>
+      </trans-unit>
+      <trans-unit id="meta.description.docs.rest-bitcoin" datatype="html">
+        <source>Documentation for the Nito Mempool&apos;s Explorer REST API service: get info on addresses, transactions, blocks, fees, mining, and more.</source>
+        <target>Documentation de l’API REST de l’explorateur Nito : adresses, transactions, blocs, frais et minage.</target>
+      </trans-unit>
+      <trans-unit id="meta.description.docs.websocket-bitcoin" datatype="html">
+        <source>Documentation for the Nito Mempool&apos;s Explorer WebSocket API service: get real-time info on blocks, mempools, transactions, addresses, and more.</source>
+        <target>Documentation de l’API WebSocket de l’explorateur Nito : blocs, mempool, transactions et adresses en temps réel.</target>
+      </trans-unit>
+      <trans-unit id="7718006334864906902" datatype="html">
+        <source><x id="PH" equiv-text="this.amountShortenerPipe.transform(isp[2] / 100000000, 2)"/> NITO</source>
+        <target><x id="PH" equiv-text="this.amountShortenerPipe.transform(isp[2] / 100000000, 2)"/> NITO</target>
+      </trans-unit>
+      <trans-unit id="fees-box.syncing" datatype="html">
+        <source>Fee estimates are synchronizing.</source>
+        <target>Estimation des frais en cours de synchronisation.</target>
+      </trans-unit>
+      <trans-unit id="fees-box.orchard-size" datatype="html">
+        <source>Orchard fee rates use a virtual size that includes the cost of proofs.</source>
+        <target>Le taux de frais Orchard tient compte du coût des preuves dans la taille virtuelle.</target>
+      </trans-unit>
+      <trans-unit id="footer.open-source-explorer" datatype="html">
+        <source>Open Source Nito Mempool Explorer</source>
+        <target>Code source de l’explorateur Nito</target>
       </trans-unit>
       </body>
   </file>

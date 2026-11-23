@@ -139,12 +139,14 @@ export class PoolRankingComponent implements OnInit {
         totalEstimatedHashrateOther += pool.lastEstimatedHashrate;
         return;
       }
+      const label = pool.displayName ?? pool.name;
       data.push({
+        id: pool.poolId,
         itemStyle: {
-          color: poolsColor[pool.name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()],
+          color: pool.displayName ? undefined : poolsColor[pool.name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()],
         },
         value: pool.share,
-        name: pool.name + ((isMobile() || this.widget) ? `` : ` (${pool.share}%)`),
+        name: label + ((isMobile() || this.widget) ? `` : ` (${pool.share}%)`),
         label: {
           overflow: 'truncate',
           width: this.widget ? 112 : 180,
@@ -167,11 +169,11 @@ export class PoolRankingComponent implements OnInit {
               let hashrate = pool.lastEstimatedHashrate;
               if ('3d' === this.miningWindowPreference) { hashrate = pool.lastEstimatedHashrate3d; }
               if ('1w' === this.miningWindowPreference) { hashrate = pool.lastEstimatedHashrate1w; }
-              return `<b style="color: white">${pool.name} (${pool.share}%)</b><br>` +
+              return `<b style="color: white">${label} (${pool.share}%)</b><br>` +
                 hashrate.toFixed(2) + ' ' + miningStats.miningUnits.hashrateUnit +
                 `<br>` + $localize`${ i }:INTERPOLATION: blocks`;
             } else {
-              return `<b style="color: white">${pool.name} (${pool.share}%)</b><br>` +
+              return `<b style="color: white">${label} (${pool.share}%)</b><br>` +
                 $localize`${ i }:INTERPOLATION: blocks`;
             }
           }

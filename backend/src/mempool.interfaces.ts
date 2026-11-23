@@ -26,6 +26,7 @@ export interface PoolInfo {
 }
 
 export interface PoolStats extends PoolInfo {
+  displayName?: string;
   rank: number;
   emptyBlocks: number;
 }

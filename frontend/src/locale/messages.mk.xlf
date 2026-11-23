@@ -11660,6 +11660,54 @@
         <source>This has been the case on all blockchains since 2009 and is completely safe.</source>
         <target>Ова е случај на сите блокчејнови од 2009 година и е целосно безбедно.</target>
       </trans-unit>
+      <trans-unit id="graphs.accelerationFees.accelerated" datatype="html">
+        <source>Accelerated</source>
+        <target>Забрзана</target>
+      </trans-unit>
+      <trans-unit id="graphs.blockFeesSubsidy.fees" datatype="html">
+        <source>Fees</source>
+        <target>Провизии</target>
+      </trans-unit>
+      <trans-unit id="8c04fe2c71ac7ae614195ae737eb2c3c8e052452" datatype="html">
+        <source>Total amount of NITO held in non-dust Federation UTXOs that have expired timelocks</source>
+        <target>Вкупен износ на NITO во не-прашински UTXO на федерацијата со истечени временски заклучоци</target>
+      </trans-unit>
+      <trans-unit id="4a0c346986bbb2c1e57bea193eedafed0d86a015" datatype="html">
+        <source>Total amount of NITO held in Federation UTXOs that have expired timelocks</source>
+        <target>Вкупен износ на NITO во UTXO на федерацијата со истечени временски заклучоци</target>
+      </trans-unit>
+      <trans-unit id="b81e3b60653955a0b1915f4601d8c0277ea25868" datatype="html">
+        <source>Pools luck (~4 weeks)</source>
+        <target>Среќа на пуловите (~4 недели)</target>
+      </trans-unit>
+      <trans-unit id="5d843a1196ad919e257725d6d3e996a5e253ef49" datatype="html">
+        <source>Pools count (~4 weeks)</source>
+        <target>Број на пулови (~4 недели)</target>
+      </trans-unit>
+      <trans-unit id="3d3a5f61418d8efe627f1aabbf0ebb491c5b4a16" datatype="html">
+        <source>Blocks (~4 weeks)</source>
+        <target>Блокови (~4 недели)</target>
+      </trans-unit>
+      <trans-unit id="857a49366b27c149225b573698cef74e4a7861c2" datatype="html">
+        <source>Maximum fee rate (nitoshi/vB)</source>
+        <target>Максимална стапка на провизија (nitoshi/vB)</target>
+      </trans-unit>
+      <trans-unit id="mining.avg-fee-title-4w" datatype="html">
+        <source>Avg Tx Fee</source>
+        <target>Прос. Провизија на Tx</target>
+      </trans-unit>
+      <trans-unit id="89401de5328899b365e9c4a1f31cd929469f4282" datatype="html">
+        <source>Search</source>
+        <target>Пребарувај</target>
+      </trans-unit>
+      <trans-unit id="02974e87f54d8a1d2acd30ae109aa74f893f91f6" datatype="html">
+        <source>Mempool by vBytes (nitoshi/vByte)</source>
+        <target>Mempool прикажан по vBytes (nitoshi/vByte)</target>
+      </trans-unit>
+      <trans-unit id="meta.description.bitcoin.graphs.mempool" datatype="html">
+        <source>See mempool size (in MvB) and transactions per second (in vB/s) visualized over time.</source>
+        <target>Видете ја големината на мемпулот (во MvB) и трансакции во секунда (во vB/s) визуелизирани во текот на времето.</target>
+      </trans-unit>
       </body>
   </file>
 </xliff>

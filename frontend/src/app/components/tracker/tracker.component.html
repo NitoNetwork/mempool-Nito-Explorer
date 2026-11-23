@@ -12,18 +12,18 @@
         }
         @if (!enterpriseInfo || enterpriseInfo.dualLogo) {
           <a [routerLink]="['/' | relativeUrl]">
-            <img src="/resources/nito-logo.png" alt="Nito" class="mempool-logo" style="width: 36px; height: 36px; object-fit: contain;">
+            <img src="/resources/nito-logo.png?v=2" alt="Nito" class="mempool-logo" style="width: 36px; height: 36px; object-fit: contain;">
           </a>
         }
 
         @if (!enterpriseInfo || !enterpriseInfo.dualLogo) {
           <div [ngSwitch]="network" class="network-label">
-            <span *ngSwitchCase="'signet'" class="network signet"><span class="name">Nito Signet</span><img src="/resources/nito-logo.png" alt="Nito" class="nito-network-logo"></span>
-            <span *ngSwitchCase="'testnet'" class="network testnet"><span class="name">Nito Testnet</span><img src="/resources/nito-logo.png" alt="Nito" class="nito-network-logo"></span>
-            <span *ngSwitchCase="'testnet4'" class="network testnet"><span class="name">Nito Testnet4</span><img src="/resources/nito-logo.png" alt="Nito" class="nito-network-logo"></span>
+            <span *ngSwitchCase="'signet'" class="network signet"><span class="name">Nito Signet</span><img src="/resources/nito-logo.png?v=2" alt="Nito" class="nito-network-logo"></span>
+            <span *ngSwitchCase="'testnet'" class="network testnet"><span class="name">Nito Testnet</span><img src="/resources/nito-logo.png?v=2" alt="Nito" class="nito-network-logo"></span>
+            <span *ngSwitchCase="'testnet4'" class="network testnet"><span class="name">Nito Testnet4</span><img src="/resources/nito-logo.png?v=2" alt="Nito" class="nito-network-logo"></span>
             <span *ngSwitchCase="'liquid'" class="network liquid"><span class="name">Liquid</span><app-svg-images name="liquid" width="35" height="35" viewBox="0 0 125 125" style="display: inline-block" class="mainnet ml-2"></app-svg-images></span>
             <span *ngSwitchCase="'liquidtestnet'" class="network liquidtestnet"><span class="name">Liquid Testnet</span><app-svg-images name="liquidtestnet" width="35" height="35" viewBox="0 0 125 125" style="display: inline-block" class="mainnet ml-2"></app-svg-images></span>
-            <span *ngSwitchDefault class="network mainnet"><span class="name">Nito</span><img src="/resources/nito-logo.png" alt="Nito" class="nito-network-logo"></span>
+            <span *ngSwitchDefault class="network mainnet"><span class="name">Nito</span><img src="/resources/nito-logo.png?v=2" alt="Nito" class="nito-network-logo"></span>
           </div>
         }
       </div>

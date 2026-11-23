@@ -11666,6 +11666,86 @@
         <source>This has been the case on all blockchains since 2009 and is completely safe.</source>
         <target>Tak jest na wszystkich blockchainach od 2009 roku i jest to całkowicie bezpieczne.</target>
       </trans-unit>
+      <trans-unit id="d4b773c761e87928b8658fe253c276f1d84044a9" datatype="html">
+        <source>Accelerate to ~<x id="INTERPOLATION" equiv-text="{{ x | number : &apos;1.0-0&apos; }}"/> nitoshi/vB</source>
+        <target>Przyszpiesz do ~<x id="INTERPOLATION" equiv-text="{{ x | number : '1.0-0' }}"/> nitoshi/vB</target>
+      </trans-unit>
+      <trans-unit id="graphs.accelerationFees.accelerated" datatype="html">
+        <source>Accelerated</source>
+        <target>Przyspieszona</target>
+      </trans-unit>
+      <trans-unit id="meta.description.nito.address" datatype="html">
+        <source>See mempool transactions, confirmed transactions, balance, and more for <x id="PH" equiv-text="this.stateService.network===&apos;liquid&apos;||this.stateService.network===&apos;liquidtestnet&apos;?&apos;Liquid&apos;:&apos;Nito&apos;"/><x id="PH_1" equiv-text="seoDescriptionNetwork(this.stateService.network)"/> address <x id="INTERPOLATION" equiv-text="this.addressString"/>.</source>
+        <target>Zobacz transakcje w mempoolu, potwierdzone, saldo oraz inne dane dla adresu <x id="PH" equiv-text="this.stateService.network==='liquid'||this.stateService.network==='liquidtestnet'?'Liquid':'Nitocoin'"/><x id="PH_1" equiv-text="seoDescriptionNetwork(this.stateService.network)"/> <x id="INTERPOLATION" equiv-text="this.addressString"/>.</target>
+      </trans-unit>
+      <trans-unit id="graphs.blockFeesSubsidy.fees" datatype="html">
+        <source>Fees</source>
+        <target>Opłaty</target>
+      </trans-unit>
+      <trans-unit id="8c04fe2c71ac7ae614195ae737eb2c3c8e052452" datatype="html">
+        <source>Total amount of NITO held in non-dust Federation UTXOs that have expired timelocks</source>
+        <target>Całkowita ilość NITO przechowywanych w UTXO Federacji nie będących pyłem, dla których wygasły blokady czasowe</target>
+      </trans-unit>
+      <trans-unit id="4a0c346986bbb2c1e57bea193eedafed0d86a015" datatype="html">
+        <source>Total amount of NITO held in Federation UTXOs that have expired timelocks</source>
+        <target>Całkowita ilość NITO przechowywanych w UTXO Federacji, dla których wygasły blokady czasowe</target>
+      </trans-unit>
+      <trans-unit id="b81e3b60653955a0b1915f4601d8c0277ea25868" datatype="html">
+        <source>Pools luck (~4 weeks)</source>
+        <target>Szczęście puli (~4 tygodnie)</target>
+      </trans-unit>
+      <trans-unit id="5d843a1196ad919e257725d6d3e996a5e253ef49" datatype="html">
+        <source>Pools count (~4 weeks)</source>
+        <target>Liczba puli (~4 tygodnie)</target>
+      </trans-unit>
+      <trans-unit id="3d3a5f61418d8efe627f1aabbf0ebb491c5b4a16" datatype="html">
+        <source>Blocks (~4 weeks)</source>
+        <target>Bloki (~4 tygodnie)</target>
+      </trans-unit>
+      <trans-unit id="8d51c47ca0f6f0249c8af757500cdbd879e5c35b" datatype="html">
+        <source>Nitocoin Price</source>
+        <target>Cena Nitocoina</target>
+      </trans-unit>
+      <trans-unit id="857a49366b27c149225b573698cef74e4a7861c2" datatype="html">
+        <source>Maximum fee rate (nitoshi/vB)</source>
+        <target>Maksymalny poziom opłat (nitoshi/vB)</target>
+      </trans-unit>
+      <trans-unit id="mining.avg-fee-title-4w" datatype="html">
+        <source>Avg Tx Fee</source>
+        <target>Śr. stopa opłat</target>
+      </trans-unit>
+      <trans-unit id="89401de5328899b365e9c4a1f31cd929469f4282" datatype="html">
+        <source>Search</source>
+        <target>Szukaj</target>
+      </trans-unit>
+      <trans-unit id="02974e87f54d8a1d2acd30ae109aa74f893f91f6" datatype="html">
+        <source>Mempool by vBytes (nitoshi/vByte)</source>
+        <target>Mempool wg vBytes (nitoshi/vByte)</target>
+      </trans-unit>
+      <trans-unit id="meta.description.bitcoin.graphs.mempool" datatype="html">
+        <source>See mempool size (in MvB) and transactions per second (in vB/s) visualized over time.</source>
+        <target>Zobacz rozmiar mempoola (w MvB) oraz transakcje na sekundę (w vB/s) wizualizowane w czasie.</target>
+      </trans-unit>
+      <trans-unit id="meta.description.nito.transaction" datatype="html">
+        <source>Get real-time status, addresses, fees, script info, and more for <x id="PH" equiv-text="network"/><x id="PH_1" equiv-text="seoDescription"/> transaction with txid <x id="PH_2" equiv-text="this.txId"/>.</source>
+        <target>Uzyskaj w czasie rzeczywistym status, adresy, opłaty, informacje o skrypcie i nie tylko dla <x id="PH" equiv-text="network"/><x id="PH_1" equiv-text="seoDescription"/> transakcji z txid <x id="PH_2" equiv-text="this.txId"/>.</target>
+      </trans-unit>
+      <trans-unit id="meta.description.bitcoin.transaction" datatype="html">
+        <source>Get real-time status, addresses, fees, script info, and more for <x id="PH" equiv-text="network"/><x id="PH_1" equiv-text="seoDescription"/> transaction with txid <x id="PH_2" equiv-text="this.txId"/>.</source>
+        <target>Uzyskaj w czasie rzeczywistym status, adresy, opłaty, informacje o skrypcie i nie tylko dla <x id="PH" equiv-text="network"/><x id="PH_1" equiv-text="seoDescription"/> transakcji z txid <x id="PH_2" equiv-text="this.txId"/>.</target>
+      </trans-unit>
+      <trans-unit id="e8f0bde6ce554fed5382ac2d3021c4ed545328e1" datatype="html">
+        <source>Error decoding transaction, reason: <x id="INTERPOLATION" equiv-text="{{ error | nitoActivationText:(stateService.orchardActivated$ | async) }}"/></source>
+        <target>Błąd dekodowania transakcji, powód: <x id="INTERPOLATION" equiv-text="{{ error }}"/></target>
+      </trans-unit>
+      <trans-unit id="meta.description.bitcoin.wallet" datatype="html">
+        <source>See mempool transactions, confirmed transactions, balance, and more for <x id="PH" equiv-text="this.stateService.network===&apos;liquid&apos;||this.stateService.network===&apos;liquidtestnet&apos;?&apos;Liquid&apos;:&apos;Nito&apos;"/><x id="PH_1" equiv-text="seoDescriptionNetwork(this.stateService.network)"/> wallet <x id="INTERPOLATION" equiv-text="walletName"/>.</source>
+        <target>Zobacz transakcje w mempoolu, potwierdzone transakcje, saldo i więcej dla <x id="PH" equiv-text="this.stateService.network==='liquid'||this.stateService.network==='liquidtestnet'?'Liquid':'Nitocoin'"/><x id="PH_1" equiv-text="seoDescriptionNetwork(this.stateService.network)"/>portfela<x id="INTERPOLATION" equiv-text="walletName"/>.</target>
+      </trans-unit>
+      <trans-unit id="dashboard.pool-total-confirmed" datatype="html">
+        <source>Total</source>
+        <target>Łącznie</target>
+      </trans-unit>
       </body>
   </file>
 </xliff>
