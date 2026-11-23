@@ -111,9 +111,15 @@ class Mining {
   /**
    * Generate high level overview of the pool ranks and general stats
    */
-  public async $getPoolsStats(interval: string | null): Promise<object> {
+  public async $getPoolsStats(interval: string | null) {
     interval = interval || '4w';
-    const poolsStatistics = {};
+    const poolsStatistics: {
+      pools: PoolStats[];
+      blockCount: number;
+      lastEstimatedHashrate?: number;
+      lastEstimatedHashrate3d?: number;
+      lastEstimatedHashrate1w?: number;
+    } = { pools: [], blockCount: 0 };
 
     const rawPoolsInfo: PoolInfo[] = await PoolsRepository.$getPoolsInfo(interval);
     const emptyBlocks: any[] = await BlocksRepository.$countEmptyBlocks(null, interval);

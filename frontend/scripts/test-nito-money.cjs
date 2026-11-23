@@ -332,12 +332,13 @@ socket.initRbfSummary().then(async () => {
   const displayedFees = render(template('components/fees-box/fees-box.component.html'), {
     stateService: socket.stateService,
     recommendedFees$: new BehaviorSubject({
-      minimumFee: 1, economyFee: 5, hourFee: null, halfHourFee: 5, fastestFee: 8.025, mempoolEmpty: true,
+      minimumFee: 1, economyFee: 5, hourFee: null, halfHourFee: 5, fastestFee: 8.025, mempoolEmpty: false,
       targetBlocks: { economyFee: 87, hourFee: null, halfHourFee: 30, fastestFee: 2 },
     }),
   });
   assert.deepEqual(Array.from(displayedFees.nativeElement.querySelectorAll('.fee-target'), target => target.textContent.trim()),
     ['Estimate unavailable']);
+  assert.equal(displayedFees.nativeElement.querySelector('.fee-text app-fee-rate').fee, 1);
   assert.match(displayedFees.nativeElement.querySelector('.fee-minimum').textContent, /Minimum accepted by this node/);
   const docsTemplate = template('docs/api-docs/api-docs.component.html').split('\n').find(line => line.includes('Bech32x Orchard'));
   render(docsTemplate, { stateService: socket.stateService });

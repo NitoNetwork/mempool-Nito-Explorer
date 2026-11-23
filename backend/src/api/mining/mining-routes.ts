@@ -31,6 +31,7 @@ interface CurrentMiningSnapshot {
 
 class MiningRoutes {
   private prewarmTimer: NodeJS.Timeout | undefined;
+  private poolPrewarmAfter = 0;
 
   public startCachePrewarm(): void {
     if (this.prewarmTimer || !config.DATABASE.ENABLED) {
@@ -47,17 +48,29 @@ class MiningRoutes {
     }
   }
 
-  /** @asyncSafe All refresh failures are collected and logged below. */
+  /** @asyncSafe */
   private async $prewarmCache(): Promise<void> {
     const results = await Promise.allSettled([
       miningResponseCache.get('pools:all', MINING_CACHE_POLICY.liveAggregate, () => this.$loadPoolsStats('all')),
       miningResponseCache.get('hashrate:1y', MINING_CACHE_POLICY.historical, () => this.$loadHistoricalHashrate('1y')),
       miningResponseCache.get('reward-stats:40320', MINING_CACHE_POLICY.liveAggregate, () => mining.$getRewardStats(40320)),
-    ]);
+    ] as const);
     for (const result of results) {
       if (result.status === 'rejected') {
         logger.debug(`Failed to prewarm a mining dashboard snapshot: ${result.reason instanceof Error ? result.reason.message : result.reason}`);
       }
+    }
+    const pools = results[0];
+    if (pools.status !== 'fulfilled' || Date.now() < this.poolPrewarmAfter || !miningResponseCache.available) { return; }
+    const activePools = pools.value.stats.pools.filter(pool => pool.poolUniqueId !== 0 && pool.slug).slice(0, 8);
+    if (!activePools.length) { return; }
+    this.poolPrewarmAfter = Date.now() + 4 * 60_000;
+    for (const pool of activePools) {
+      if (!miningResponseCache.available) { return; }
+      await Promise.allSettled([
+        this.$cachedPoolStats(pool.slug),
+        this.$cachedPoolHashrate(pool.slug, pools.value.blockCount),
+      ]);
     }
   }
 
@@ -65,10 +78,10 @@ class MiningRoutes {
     app
       .get(config.MEMPOOL.API_URL_PREFIX + 'mining/pools', this.$listPools)
       .get(config.MEMPOOL.API_URL_PREFIX + 'mining/pools/:interval', this.$getPools.bind(this))
-      .get(config.MEMPOOL.API_URL_PREFIX + 'mining/pool/:slug/hashrate', this.$getPoolHistoricalHashrate)
+      .get(config.MEMPOOL.API_URL_PREFIX + 'mining/pool/:slug/hashrate', this.$getPoolHistoricalHashrate.bind(this))
       .get(config.MEMPOOL.API_URL_PREFIX + 'mining/pool/:slug/blocks', this.$getPoolBlocks)
       .get(config.MEMPOOL.API_URL_PREFIX + 'mining/pool/:slug/blocks/:height', this.$getPoolBlocks)
-      .get(config.MEMPOOL.API_URL_PREFIX + 'mining/pool/:slug', this.$getPool)
+      .get(config.MEMPOOL.API_URL_PREFIX + 'mining/pool/:slug', this.$getPool.bind(this))
       .get(config.MEMPOOL.API_URL_PREFIX + 'mining/hashrate/pools/:interval', this.$getPoolsHistoricalHashrate)
       .get(config.MEMPOOL.API_URL_PREFIX + 'mining/hashrate/:interval', this.$getHistoricalHashrate.bind(this))
       .get(config.MEMPOOL.API_URL_PREFIX + 'mining/difficulty-adjustments', this.$getDifficultyAdjustments)
@@ -160,13 +173,13 @@ class MiningRoutes {
     }
   }
 
+  private $cachedPoolStats(slug: string): Promise<object> {
+    return miningResponseCache.get(`pool:${slug}`, MINING_CACHE_POLICY.liveAggregate, () => mining.$getPoolStat(slug));
+  }
+
   private async $getPool(req: Request, res: Response): Promise<void> {
     try {
-      const stats = await miningResponseCache.get(
-        `pool:${req.params.slug}`,
-        MINING_CACHE_POLICY.liveAggregate,
-        () => mining.$getPoolStat(req.params.slug),
-      );
+      const stats = await this.$cachedPoolStats(req.params.slug);
       res.header('Pragma', 'public');
       res.header('Cache-control', 'public');
       res.setHeader('Expires', new Date(Date.now() + 1000 * 60).toUTCString());
@@ -266,19 +279,23 @@ class MiningRoutes {
     }
   }
 
+  private $cachedPoolHashrate(slug: string, knownBlockCount?: number) {
+    return miningResponseCache.get(
+      `pool-hashrate:${slug}`,
+      MINING_CACHE_POLICY.historical,
+      /** @asyncUnsafe */ async () => {
+        const [hashrates, blockCount] = await Promise.all([
+          HashratesRepository.$getPoolWeeklyHashrate(slug),
+          knownBlockCount ?? BlocksRepository.$blockCount(null, '4w'),
+        ]);
+        return { hashrates, blockCount };
+      },
+    );
+  }
+
   private async $getPoolHistoricalHashrate(req: Request, res: Response) {
     try {
-      const { hashrates, blockCount } = await miningResponseCache.get(
-        `pool-hashrate:${req.params.slug}`,
-        MINING_CACHE_POLICY.historical,
-        async () => {
-          const [hashrates, blockCount] = await Promise.all([
-            HashratesRepository.$getPoolWeeklyHashrate(req.params.slug),
-            BlocksRepository.$blockCount(null, '4w'),
-          ]);
-          return { hashrates, blockCount };
-        },
-      );
+      const { hashrates, blockCount } = await this.$cachedPoolHashrate(req.params.slug);
       res.header('Pragma', 'public');
       res.header('Cache-control', 'public');
       res.header('X-total-count', blockCount.toString());
