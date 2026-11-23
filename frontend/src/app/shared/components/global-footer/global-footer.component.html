@@ -66,7 +66,7 @@
           <a target="_blank" href="https://github.com/NitoNetwork/mempool-Nito-Explorer" i18n="@@footer.open-source-explorer">Open Source Nito Mempool Explorer</a>
           <span *ngIf="stateService.env.GIT_COMMIT_HASH_MEMPOOL_SPACE">[{{ (servicesBackendInfo$ | async )?.gitCommit | slice:0:8 }}]</span>
         </p>
-        <p *ngIf="!officialMempoolSpace"><a target="_blank" href="https://github.com/NitoNetwork/mempool-Nito-Explorer">Open Source Nito Mempool Explorer</a></p>
+        <p *ngIf="!officialMempoolSpace"><a target="_blank" href="https://github.com/NitoNetwork/mempool-Nito-Explorer" i18n="@@footer.open-source-explorer">Open Source Nito Mempool Explorer</a></p>
       </div>
     </div>
   </div>
