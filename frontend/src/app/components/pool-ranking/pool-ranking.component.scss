@@ -37,6 +37,14 @@
   }
 }
 
+@media (max-width: 991.98px) {
+  .pools-table th,
+  .pools-table td {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}
+
 @media (max-width: 767.98px) {
   .pools-table {
     table-layout: fixed;
@@ -45,7 +53,6 @@
   .pools-table th,
   .pools-table td {
     padding: .3em !important;
-    overflow-wrap: anywhere;
   }
 
   .pools-table th:nth-child(2) {

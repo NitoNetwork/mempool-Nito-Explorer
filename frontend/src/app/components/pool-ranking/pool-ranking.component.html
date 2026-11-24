@@ -109,7 +109,7 @@
           <td class="" *ngIf="'3d' === this.miningWindowPreference">{{ pool.lastEstimatedHashrate3d | number: '1.2-2' }} {{ miningStats.miningUnits.hashrateUnit }}</td>
           <td class="" *ngIf="'1w' === this.miningWindowPreference">{{ pool.lastEstimatedHashrate1w | number: '1.2-2' }} {{ miningStats.miningUnits.hashrateUnit }}</td>
           <td>
-            {{ pool.blockCount }}<span class="d-none d-md-table-cell">&nbsp;({{ pool.share }}%)</span>
+            {{ pool.blockCount }}<span class="d-none d-md-inline"> ({{ pool.share }}%)</span>
           </td>
           <td *ngIf="auditAvailable" class="health text-right" [ngClass]="{'widget': widget, 'legacy': !indexingAvailable, 'health-column': ['24h', '3d', '1w'].includes(this.miningWindowPreference)}">
             <a

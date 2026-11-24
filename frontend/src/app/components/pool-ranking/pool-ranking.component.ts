@@ -233,6 +233,7 @@ export class PoolRankingComponent implements OnInit {
       tooltip: {
         trigger: 'item',
         confine: true,
+        extraCssText: 'max-width: calc(100vw - 2rem); white-space: normal; overflow-wrap: anywhere;',
         textStyle: {
           align: 'left',
         }
