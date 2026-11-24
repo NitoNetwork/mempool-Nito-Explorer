@@ -19,6 +19,7 @@
 .nito-supply-strip {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 1.25rem;
   min-height: 58px;
   padding: 0.6rem 0.9rem;
@@ -29,14 +30,15 @@
 }
 
 .nito-supply-title {
-  flex: 0 0 auto;
   margin: 0;
   font-size: 0.9rem;
+  overflow-wrap: anywhere;
 }
 
 .nito-supply-values {
   display: flex;
   flex: 1 1 auto;
+  flex-wrap: wrap;
   gap: 1.25rem;
   min-width: 0;
 
@@ -45,20 +47,45 @@
   strong { overflow-wrap: anywhere; font-size: 0.88rem; font-variant-numeric: tabular-nums; }
 }
 
-.nito-supply-price { flex: 0 0 auto; }
+.nito-supply-price {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  margin-inline-start: auto;
+}
 
 @media (max-width: 767px) {
-  .nito-supply-strip { align-items: flex-start; flex-wrap: wrap; gap: 0.65rem 1rem; }
+  .nito-supply-strip { align-items: flex-start; gap: 0.65rem 1rem; }
   .nito-supply-values { order: 3; flex-basis: 100%; gap: 0.8rem; }
-  .nito-supply-price { margin-left: auto; }
+  .nito-supply-price { flex-basis: 100%; margin-inline-start: 0; }
+}
+
+@media (max-width: 575.98px) {
+  .quick-filter .btn-group {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.25rem;
+    max-width: 100%;
+
+    .btn {
+      flex: 0 1 auto;
+      min-width: 0;
+      margin-inline-start: 0;
+      border-radius: 0.2rem;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+  }
 }
 
 .nito-price-link {
   display: inline-flex;
   align-items: baseline;
-  justify-content: center;
   flex-wrap: wrap;
   gap: 0.35rem;
+  max-inline-size: 100%;
+  overflow-wrap: anywhere;
+
+  > * { min-inline-size: 0; }
 
   .price-history-label::before {
     content: '·';

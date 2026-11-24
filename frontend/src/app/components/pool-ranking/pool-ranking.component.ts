@@ -232,6 +232,7 @@ export class PoolRankingComponent implements OnInit {
       color: chartColors.filter(color => color !== '#FDD835'),
       tooltip: {
         trigger: 'item',
+        confine: true,
         textStyle: {
           align: 'left',
         }

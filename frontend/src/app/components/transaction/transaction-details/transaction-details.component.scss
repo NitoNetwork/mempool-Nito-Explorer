@@ -15,7 +15,7 @@
 	width: 150px;
 
 	@media (max-width: 768px) {
-	  width: 175px;
+	  width: 40%;
 	}
 }
 
@@ -70,6 +70,16 @@
 	.details-table td:first-child {
 		white-space: pre-wrap;
 	}
+
+  .box table {
+    table-layout: fixed;
+  }
+
+  .box td,
+  .box .badge {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
 }
 
 .fiat {

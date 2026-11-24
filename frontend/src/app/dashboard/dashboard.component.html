@@ -13,8 +13,8 @@
       } @else {
         <span class="text-muted" i18n="@@dashboard.confirmed-pools-unavailable">Supply synchronizing</span>
       }
-      <div class="nito-supply-price">
-        <a *ngIf="stateService.env.HISTORICAL_PRICE" class="nito-price-link" [routerLink]="['/graphs/price' | relativeUrl]">
+      <div *ngIf="stateService.env.HISTORICAL_PRICE" class="nito-supply-price">
+        <a class="nito-price-link" [routerLink]="['/graphs/price' | relativeUrl]">
           <span i18n="dashboard.current-nito-fiat">Current NITO/{{ currency }}</span>
           <strong><app-fiat [value]="100_000_000" digitsInfo="1.2-8"></app-fiat></strong>
           <span class="price-history-label" i18n="dashboard.price-history">Price history</span>

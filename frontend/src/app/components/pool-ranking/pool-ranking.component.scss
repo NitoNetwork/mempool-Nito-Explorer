@@ -38,18 +38,29 @@
 }
 
 @media (max-width: 767.98px) {
+  .pools-table {
+    table-layout: fixed;
+  }
+
   .pools-table th,
   .pools-table td {
     padding: .3em !important;
+    overflow-wrap: anywhere;
+  }
+
+  .pools-table th:nth-child(2) {
+    width: 34px;
+  }
+
+  .pools-table th:nth-child(3) {
+    width: 49%;
   }
 }
 
 @media (max-width: 430px) {
   .pool-name {
     max-width: 110px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    overflow-wrap: anywhere;
   }
   .health-column {
     display: none;
@@ -75,6 +86,7 @@
   }
   .item {
     max-width: 160px;
+    min-width: 0;
     width: 50%;
     display: inline-block;
     margin: 0px auto 20px;
@@ -101,9 +113,7 @@
     .card-title {
       font-size: 1rem;
       color: var(--title-fg);
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      overflow-wrap: anywhere;
     }
     .card-text {
       font-size: 18px;

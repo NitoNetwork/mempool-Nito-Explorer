@@ -14,9 +14,6 @@
 
 form {
   margin-top: 5px;
-  @media (min-width: 564px) {
-    margin-right: -5px;
-  }
   @media (min-width: 992px) {
     width: 100%;
   }
@@ -37,7 +34,7 @@ form {
   position: relative;
   width: 100%;
   @media (min-width: 768px) {
-    min-width: 300px;
+    min-width: 0;
   }
   @media (min-width: 992px) {
     min-width: 142px;

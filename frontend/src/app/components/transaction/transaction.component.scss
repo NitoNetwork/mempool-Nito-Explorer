@@ -52,7 +52,7 @@
 	width: 150px;
 
 	@media (max-width: 768px) {
-	  width: 175px;
+	  width: 40%;
 	}
 }
 
@@ -120,6 +120,16 @@
 	.details-table td:first-child {
 		white-space: pre-wrap;
 	}
+
+  .box table {
+    table-layout: fixed;
+  }
+
+  .box td,
+  .box .badge {
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
 }
 
 .fiat {
@@ -208,21 +218,26 @@
 
 .subtitle-block {
   display: flex;
+  flex-wrap: wrap;
   flex-direction: row;
   align-items: baseline;
   justify-content: space-between;
 
   .title {
-    flex-shrink: 0;
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
 
   .title-buttons {
     flex-shrink: 1;
+    min-width: 0;
     text-align: right;
     .btn {
       margin-top: 0;
       margin-bottom: 8px;
       margin-left: 8px;
+      white-space: normal;
+      overflow-wrap: anywhere;
     }
   }
 }

@@ -306,7 +306,8 @@
   </ng-container>
 
   <!-- Blocks list -->
-  <h2 i18n="master-page.blocks">Blocks</h2>
+  <h2 id="pool-blocks-title" i18n="master-page.blocks">Blocks</h2>
+  <div class="table-responsive" tabindex="0" role="region" aria-labelledby="pool-blocks-title">
   <table class="table table-borderless" [alwaysCallback]="true" infiniteScroll [infiniteScrollDistance]="1.5"
     [infiniteScrollUpDistance]="1.5" [infiniteScrollThrottle]="50" (scrolled)="loadMore()">
     <ng-container *ngIf="blocks$ | async as blocks; else skeleton">
@@ -412,6 +413,7 @@
       </tbody>
     </ng-template>
   </table>
+  </div>
 
 </div>
 
